@@ -18,7 +18,7 @@ const tableMap: Record<SyncableTable, string> = {
 /**
  * Push all pending local changes to Supabase
  */
-export async function pushPendingChanges(tableName: SyncableTable): Promise<number> {
+export async function pushPendingChanges(tableName: SyncableTable, userId: string): Promise<number> {
   const db = getDB();
   const supabase = createClient();
   const supabaseTable = tableMap[tableName];
@@ -40,8 +40,14 @@ export async function pushPendingChanges(tableName: SyncableTable): Promise<numb
 
       const idField = tableName === 'settings' ? 'key' : 'id';
 
-      if (data.user_id === 'local-user' || record[idField] === 'local-user') {
-        // Automatically mark offline test data as synced to avoid Supabase UUID errors
+      if (data.user_id === 'local-user') {
+        data.user_id = userId;
+        // Fix it in the local DB so it doesn't stay as local-user or get duplicated on pull
+        await (db[tableName] as ReturnType<typeof db.table>).update(record[idField], { user_id: userId });
+      }
+
+      if (record[idField] === 'local-user') {
+        // e.g. settings key='local-user', just mark as synced so it doesn't block
         await (db[tableName] as ReturnType<typeof db.table>).update(record[idField], {
           _syncStatus: 'synced' as SyncStatus,
         });
@@ -119,7 +125,7 @@ export async function pullFromSupabase(
  * Full sync: push pending, then pull latest
  */
 export async function syncTable(tableName: SyncableTable, userId: string): Promise<{ pushed: number; pulled: number }> {
-  const pushed = await pushPendingChanges(tableName);
+  const pushed = await pushPendingChanges(tableName, userId);
   const pulled = await pullFromSupabase(tableName, userId);
   return { pushed, pulled };
 }
