@@ -123,9 +123,18 @@ export async function pullFromSupabase(
   let query = supabase
     .from(supabaseTable)
     .select('*')
-    .eq('user_id', userId)
     .order('created_at', { ascending: false })
     .limit(500);
+
+  // Tables that don't have user_id directly
+  const noUserIdTables = [
+    'vehicleIssues', 'tripExpenses', 'tripPackingItems', 'businessTasks',
+    'businessNotes', 'businessIdeas', 'businessDocuments', 'businessContacts'
+  ];
+
+  if (!noUserIdTables.includes(tableName)) {
+    query = query.eq('user_id', userId);
+  }
 
   // Only pull records updated after last sync
   if (lastSyncedAt) {
@@ -166,11 +175,26 @@ export async function syncTable(tableName: SyncableTable, userId: string): Promi
  * Sync all tables
  */
 export async function syncAll(userId: string): Promise<void> {
-  const tables: SyncableTable[] = Object.keys(tableMap) as SyncableTable[];
+  // Sync core/parent tables first to satisfy foreign key constraints
+  const tier1: SyncableTable[] = [
+    'settings', 'tasks', 'habits', 'waterLogs', 'expenses', 'captures',
+    'notifications', 'vehicles', 'employeeProfiles', 'trips',
+    'places', 'restaurants', 'buyItems', 'inventoryItems', 'expiryItems',
+    'wardrobeItems', 'documents', 'businessWorkspaces', 'notes', 'ideas'
+  ];
 
-  await Promise.allSettled(
-    tables.map(table => syncTable(table, userId))
-  );
+  // Sync child tables
+  const tier2: SyncableTable[] = [
+    'habitLogs', 'vehicleIssues', 'petrolExpenses', 'employeeExpenses',
+    'tripExpenses', 'tripPackingItems', 'outfits', 'businessTasks',
+    'businessNotes', 'businessIdeas', 'businessDocuments', 'businessContacts'
+  ];
+
+  // Sync Tier 1 sequentially or concurrently, but we must await before Tier 2
+  await Promise.allSettled(tier1.map(table => syncTable(table, userId)));
+  
+  // Now sync Tier 2
+  await Promise.allSettled(tier2.map(table => syncTable(table, userId)));
 }
 
 /**

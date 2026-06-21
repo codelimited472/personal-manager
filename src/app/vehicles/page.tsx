@@ -128,9 +128,13 @@ export default function VehiclesPage() {
   };
 
   const resolveIssue = async (id: string, currentStatus: string) => {
-    const nextStatus = currentStatus === 'open' ? 'in_progress' : 'resolved';
+    let nextStatus = 'resolved';
+    if (currentStatus === 'open') nextStatus = 'in_progress';
+    else if (currentStatus === 'in_progress') nextStatus = 'resolved';
+    else if (currentStatus === 'resolved') nextStatus = 'open';
+
     await db.vehicleIssues.update(id, {
-      status: nextStatus,
+      status: nextStatus as 'open' | 'in_progress' | 'resolved',
       updated_at: new Date().toISOString(),
       _syncStatus: 'pending',
     });
