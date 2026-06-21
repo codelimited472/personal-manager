@@ -29,7 +29,20 @@ export function useTasks(filter?: {
       }
 
       if (filter?.date) {
-        results = results.filter(t => t.due_date?.startsWith(filter.date!));
+        const queryDate = filter.date;
+        const today = getToday();
+        
+        if (queryDate < today) {
+          results = results.filter(t => {
+            const completedOnDate = t.status === 'completed' && t.completed_at?.startsWith(queryDate);
+            const dueOnDate = t.due_date?.startsWith(queryDate);
+            const createdOnOrBefore = t.created_at.split('T')[0] <= queryDate;
+            const wasPending = createdOnOrBefore && (t.status !== 'completed' || (t.completed_at && t.completed_at > queryDate));
+            return completedOnDate || dueOnDate || wasPending;
+          });
+        } else {
+          results = results.filter(t => t.due_date?.startsWith(queryDate));
+        }
       }
 
       if (filter?.category) {

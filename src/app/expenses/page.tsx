@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Wallet, Users, Car, Plus, Trash2, CheckCircle2, TrendingUp, Landmark } from 'lucide-react';
 import { getDB, type LocalExpense, type LocalEmployeeProfile, type LocalEmployeeExpense, type LocalPetrolExpense, type LocalVehicle } from '@/lib/db';
+import { getToday } from '@/lib/utils';
 import QuickExpenseLog from '@/components/QuickExpenseLog';
 import styles from './expenses.module.css';
 import pageStyles from '@/app/page.module.css';
@@ -132,7 +133,7 @@ export default function ExpensesPage() {
       amount: parseFloat(empAmount),
       category: empCategory,
       description: empDesc,
-      date: new Date().toISOString().split('T')[0],
+      date: getToday(),
       status: 'pending',
       created_at: new Date().toISOString(),
       _syncStatus: 'pending',
@@ -210,7 +211,7 @@ export default function ExpensesPage() {
       liters: finalLtrs,
       odometer: odo,
       mileage: calculatedMileage,
-      date: new Date().toISOString().split('T')[0],
+      date: getToday(),
       created_at: new Date().toISOString(),
       _syncStatus: 'pending',
     });
@@ -222,7 +223,7 @@ export default function ExpensesPage() {
       amount: finalAmt,
       category: 'Petrol',
       description: `Fuel for vehicle ${odo > 0 ? `(Odo: ${odo}km)` : ''} - ${finalLtrs.toFixed(2)}L @ ₹${finalRate}/L`,
-      date: new Date().toISOString().split('T')[0],
+      date: getToday(),
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       _syncStatus: 'pending',
@@ -236,7 +237,7 @@ export default function ExpensesPage() {
   };
 
   // Analytics Calculations
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = getToday();
   const currentMonthStr = todayStr.substring(0, 7);
   const currentYearStr = todayStr.substring(0, 4);
 

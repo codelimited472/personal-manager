@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Compass, Plus, Trash2, Check, MapPin, Star, DollarSign, ListTodo } from 'lucide-react';
 import { getDB, type LocalTrip, type LocalTripPackingItem, type LocalPlace, type LocalRestaurant } from '@/lib/db';
+import { getToday } from '@/lib/utils';
 import styles from './travel.module.css';
 
 export default function TravelPage() {
@@ -75,8 +76,8 @@ export default function TravelPage() {
       user_id: 'local-user',
       name: tripName,
       budget: parseFloat(tripBudget),
-      start_date: tripStart || new Date().toISOString().split('T')[0],
-      end_date: tripEnd || new Date().toISOString().split('T')[0],
+      start_date: tripStart || getToday(),
+      end_date: tripEnd || getToday(),
       created_at: new Date().toISOString(),
       _syncStatus: 'pending',
     });

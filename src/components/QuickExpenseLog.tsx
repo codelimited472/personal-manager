@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Wallet, Plus } from 'lucide-react';
 import { getDB } from '@/lib/db';
+import { getToday } from '@/lib/utils';
 import styles from '@/app/page.module.css';
 
 interface Props {
@@ -65,7 +66,7 @@ export default function QuickExpenseLog({ onExpenseAdded }: Props) {
     if (!payAmount || isNaN(Number(payAmount))) return;
 
     const db = getDB();
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = getToday();
     const trimmedBank = payBank.trim();
 
     await db.expenses.add({

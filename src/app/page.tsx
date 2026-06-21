@@ -6,6 +6,7 @@ import {
   CheckSquare, Square, Compass, CheckCircle2, Droplet, Calendar, AlertTriangle, Wallet, Lightbulb, Car, Briefcase, Plus, RefreshCw
 } from 'lucide-react';
 import { getDB, type LocalTask, type LocalHabit, type LocalHabitLog, type LocalWaterLog, type LocalExpense, type LocalNotification } from '@/lib/db';
+import { getToday } from '@/lib/utils';
 import QuickExpenseLog from '@/components/QuickExpenseLog';
 import styles from './page.module.css';
 
@@ -25,7 +26,7 @@ export default function Home() {
     async function loadDashboardData() {
       try {
         const db = getDB();
-        const todayStr = new Date().toISOString().split('T')[0];
+        const todayStr = getToday();
 
         // 1. Fetch uncompleted today's tasks
         const todayTasks = await db.tasks
@@ -89,7 +90,7 @@ export default function Home() {
 
   const toggleHabit = async (habitId: string, completedToday?: boolean) => {
     const db = getDB();
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = getToday();
     const existingLog = await db.habitLogs
       .where('[habit_id+date]')
       .equals([habitId, todayStr])
@@ -113,7 +114,7 @@ export default function Home() {
 
   const logWater = async (amount: number) => {
     const db = getDB();
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = getToday();
     await db.waterLogs.add({
       id: crypto.randomUUID(),
       user_id: 'local-user',
@@ -206,7 +207,7 @@ export default function Home() {
         >
           <Wallet className={styles.statIconExpense} />
           <div className={styles.statValue}>
-            ₹{expenses.filter(e => e.date === new Date().toISOString().split('T')[0]).reduce((sum, e) => sum + e.amount, 0).toFixed(0)}
+            ₹{expenses.filter(e => e.date === getToday()).reduce((sum, e) => sum + e.amount, 0).toFixed(0)}
           </div>
           <div className={styles.statLabel}>Today's Spend</div>
         </div>

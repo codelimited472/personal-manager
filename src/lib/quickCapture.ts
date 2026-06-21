@@ -1,5 +1,6 @@
 import { getDB } from './db';
 import { v4 as uuidv4 } from 'uuid';
+import { getToday } from './utils';
 
 export interface ParsedCapture {
   type: 'task' | 'habit' | 'expense' | 'water' | 'idea' | 'note' | 'document' | 'vehicle_issue' | 'capture';
@@ -23,7 +24,7 @@ export async function processQuickCapture(text: string): Promise<ParsedCapture> 
     const log = {
       id: uuidv4(),
       user_id: userId,
-      date: new Date().toISOString().split('T')[0],
+      date: getToday(),
       amount,
       created_at: new Date().toISOString(),
       _syncStatus: 'pending' as const,
@@ -57,7 +58,7 @@ export async function processQuickCapture(text: string): Promise<ParsedCapture> 
       amount,
       category,
       description: details,
-      date: new Date().toISOString().split('T')[0],
+      date: getToday(),
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       _syncStatus: 'pending' as const,
@@ -175,7 +176,7 @@ export async function processQuickCapture(text: string): Promise<ParsedCapture> 
     tmw.setDate(tmw.getDate() + 1);
     due_date = tmw.toISOString().split('T')[0];
   } else if (lowerText.includes('today')) {
-    due_date = new Date().toISOString().split('T')[0];
+    due_date = getToday();
   }
 
   const title = cleanText.replace(/todo:/i, '').replace(/tomorrow/i, '').replace(/today/i, '').trim();
