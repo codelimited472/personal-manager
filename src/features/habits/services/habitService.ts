@@ -42,7 +42,7 @@ export async function toggleHabitLog(userId: string, habitId: string, date: stri
     if (updated) syncToSupabase('habit_logs', updated).catch(console.error);
   } else {
     // Create new log
-    const log: HabitLog & { _syncStatus: string } = {
+    const log: any = {
       id: generateId(),
       user_id: userId,
       habit_id: habitId,
@@ -102,7 +102,7 @@ export async function getHabitLogsForMonth(habitId: string, year: number, month:
     .toArray();
 }
 
-async function syncToSupabase(table: string, record: Record<string, unknown>): Promise<void> {
+async function syncToSupabase(table: string, record: any): Promise<void> {
   try {
     const supabase = createClient();
     const { _syncStatus, _lastSyncedAt, ...data } = record;

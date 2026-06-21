@@ -71,8 +71,10 @@ export function useTasks(filter?: {
         .where('user_id')
         .equals(userId)
         .filter(t =>
-          (t.status === 'pending' && (!t.due_date || t.due_date <= today)) ||
-          (t.status === 'completed' && (t.due_date?.startsWith(today) || t.completed_at?.startsWith(today)))
+          Boolean(
+            (t.status === 'pending' && (!t.due_date || t.due_date <= today)) ||
+            (t.status === 'completed' && (t.due_date?.startsWith(today) || t.completed_at?.startsWith(today)))
+          )
         )
         .toArray();
     },

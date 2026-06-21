@@ -10,7 +10,7 @@ export async function createTask(userId: string, data: TaskFormData): Promise<Ta
   const db = getDB();
   const now = getTodayISO();
 
-  const task: Task & { _syncStatus: string } = {
+  const task: any = {
     id: generateId(),
     user_id: userId,
     ...data,
@@ -116,7 +116,7 @@ export async function getPendingTasks(userId: string): Promise<Task[]> {
 /**
  * Sync a single task to Supabase
  */
-async function syncTaskToSupabase(task: Task & { _syncStatus?: string }): Promise<void> {
+async function syncTaskToSupabase(task: any): Promise<void> {
   try {
     const supabase = createClient();
     const { _syncStatus, ...data } = task as Record<string, unknown>;

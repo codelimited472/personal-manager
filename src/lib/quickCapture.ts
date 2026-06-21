@@ -77,7 +77,7 @@ export async function processQuickCapture(text: string): Promise<ParsedCapture> 
     if (expiryMatch) {
       expiry_date = expiryMatch[1].length === 4 ? `${expiryMatch[1]}-12-31` : expiryMatch[1];
     }
-    let category = 'other' as const;
+    let category: string = 'other';
     if (lowerText.includes('passport')) category = 'passport';
     else if (lowerText.includes('insurance')) category = 'insurance';
     else if (lowerText.includes('license')) category = 'license';
@@ -92,7 +92,7 @@ export async function processQuickCapture(text: string): Promise<ParsedCapture> 
       created_at: new Date().toISOString(),
       _syncStatus: 'pending' as const,
     };
-    await db.documents.add(doc);
+    await db.documents.add(doc as any);
     return {
       type: 'document',
       data: doc,

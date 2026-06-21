@@ -33,7 +33,7 @@ export async function pushPendingChanges(tableName: SyncableTable): Promise<numb
 
   let synced = 0;
 
-  for (const record of pending) {
+  for (const record of pending as any[]) {
     try {
       // Remove local-only fields before sending to Supabase
       const { _syncStatus, _lastSyncedAt, ...data } = record;
