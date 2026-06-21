@@ -1,10 +1,44 @@
 'use client';
 
+import { useState } from 'react';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import styles from './login.module.css';
 
 export default function LoginPage() {
-  const { signInWithGoogle, loading } = useAuth();
+  const { signInWithEmail, signUpWithEmail, loading } = useAuth();
+  
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !password) return;
+    setIsSubmitting(true);
+    setErrorMsg('');
+    const { error } = await signInWithEmail(email, password);
+    if (error) {
+      setErrorMsg(error.message);
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleSignUp = async () => {
+    if (!email || !password) {
+      setErrorMsg('Please enter email and password');
+      return;
+    }
+    setIsSubmitting(true);
+    setErrorMsg('');
+    const { error } = await signUpWithEmail(email, password);
+    if (error) {
+      setErrorMsg(error.message);
+    } else {
+      setErrorMsg('Account created successfully. You can now login or check your email for a confirmation link.');
+    }
+    setIsSubmitting(false);
+  };
 
   return (
     <div className={styles.container}>
@@ -32,41 +66,51 @@ export default function LoginPage() {
           <p className={styles.subtitle}>Your complete personal operating system</p>
         </div>
 
-        <div className={styles.features}>
-          <div className={styles.feature}>
-            <span className={styles.featureIcon}>📋</span>
-            <span>Tasks & Habits</span>
-          </div>
-          <div className={styles.feature}>
-            <span className={styles.featureIcon}>💰</span>
-            <span>Expense Tracking</span>
-          </div>
-          <div className={styles.feature}>
-            <span className={styles.featureIcon}>🚗</span>
-            <span>Vehicle Management</span>
-          </div>
-          <div className={styles.feature}>
-            <span className={styles.featureIcon}>👔</span>
-            <span>Wardrobe & Outfits</span>
-          </div>
-        </div>
+        <form className={styles.formContainer} onSubmit={handleLogin}>
+          {errorMsg && (
+            <div style={{ background: 'var(--bg-card)', color: 'var(--accent-danger)', padding: '10px', borderRadius: '8px', marginBottom: '16px', fontSize: '14px', textAlign: 'center', border: '1px solid var(--accent-danger)' }}>
+              {errorMsg}
+            </div>
+          )}
+          <input
+            type="email"
+            placeholder="Email Address"
+            className={styles.inputField}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border-primary)', background: 'var(--bg-card)', color: 'var(--text-primary)', marginBottom: '12px', fontSize: '16px' }}
+          />
+          <input
+            type="password"
+            placeholder="Password"
+            className={styles.inputField}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border-primary)', background: 'var(--bg-card)', color: 'var(--text-primary)', marginBottom: '24px', fontSize: '16px' }}
+          />
+          <button
+            type="submit"
+            className={styles.googleBtn}
+            disabled={loading || isSubmitting}
+            style={{ width: '100%', marginBottom: '12px' }}
+          >
+            <span>{isSubmitting ? 'Processing...' : 'Login'}</span>
+          </button>
+          
+          <button
+            type="button"
+            className={styles.googleBtn}
+            onClick={handleSignUp}
+            disabled={loading || isSubmitting}
+            style={{ width: '100%', background: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border-primary)' }}
+          >
+            <span>Create Account</span>
+          </button>
+        </form>
 
-        <button
-          className={styles.googleBtn}
-          onClick={signInWithGoogle}
-          disabled={loading}
-          id="google-sign-in-btn"
-        >
-          <svg width="20" height="20" viewBox="0 0 24 24">
-            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
-            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-          </svg>
-          <span>{loading ? 'Signing in...' : 'Continue with Google'}</span>
-        </button>
-
-        <p className={styles.privacy}>
+        <p className={styles.privacy} style={{ marginTop: '24px' }}>
           Your data is stored securely and never shared
         </p>
       </div>
