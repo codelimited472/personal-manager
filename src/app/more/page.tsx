@@ -17,6 +17,7 @@ const moreMenu = [
   { label: 'Places & Restaurants', icon: MapPin, href: '/places', color: 'var(--accent-info)' },
   { label: 'Shopping & Buy List', icon: ShoppingCart, href: '/shopping', color: 'var(--accent-success)' },
   { label: 'Reports & Analytics', icon: BarChart3, href: '/analytics', color: 'var(--accent-secondary)' },
+  { label: 'Settings', icon: Settings, href: '/settings', color: 'var(--accent-primary)' },
 ];
 
 export default function MorePage() {

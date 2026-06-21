@@ -89,7 +89,7 @@ export async function pullFromSupabase(
   const { data, error } = await query;
 
   if (error) {
-    console.error(`Pull error for ${tableName}:`, error);
+    console.warn(`[Sync] Pull warning for ${tableName}:`, error.message || JSON.stringify(error));
     return 0;
   }
 
