@@ -101,6 +101,26 @@
   justify-content: center;
   gap: var(--space-2);
   box-shadow: var(--shadow-glow);
+  flex: 1;
+}
+
+.formActions {
+  display: flex;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+
+.cancelBtn {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3) var(--space-4);
+  font-weight: var(--weight-bold);
+  font-size: var(--text-base);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
 }
 
 /* Vehicle List */
@@ -143,10 +163,23 @@
   font-weight: var(--weight-semibold);
 }
 
-.deleteBtn {
+.actionButtons {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.deleteBtn, .editBtn {
   color: var(--text-secondary);
   padding: var(--space-2);
   border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.editBtn:hover {
+  background: var(--bg-tertiary);
+  color: var(--accent-primary);
 }
 
 .deleteBtn:hover {

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Car, FileText, AlertTriangle, Plus, Trash2, CheckCircle2 } from 'lucide-react';
+import { Car, FileText, AlertTriangle, Plus, Trash2, Edit2, CheckCircle2 } from 'lucide-react';
 import { getDB, type LocalVehicle, type LocalVehicleIssue } from '@/lib/db';
 import styles from './vehicles.module.css';
 
@@ -16,6 +16,8 @@ export default function VehiclesPage() {
   const [insExpiry, setInsExpiry] = useState('');
   const [polExpiry, setPolExpiry] = useState('');
   const [rcDetails, setRcDetails] = useState('');
+  const [color, setColor] = useState('');
+  const [editingVehicleId, setEditingVehicleId] = useState<string | null>(null);
 
   // Issues
   const [issues, setIssues] = useState<(LocalVehicleIssue & { vehicleName?: string })[]>([]);
@@ -46,25 +48,57 @@ export default function VehiclesPage() {
     e.preventDefault();
     if (!name || !regNo) return;
 
-    await db.vehicles.add({
-      id: crypto.randomUUID(),
-      user_id: 'local-user',
-      name,
-      registration_number: regNo,
-      insurance_expiry: insExpiry || undefined,
-      pollution_expiry: polExpiry || undefined,
-      rc_details: rcDetails || undefined,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      _syncStatus: 'pending',
-    });
+    if (editingVehicleId) {
+      await db.vehicles.update(editingVehicleId, {
+        name,
+        registration_number: regNo,
+        insurance_expiry: insExpiry || undefined,
+        pollution_expiry: polExpiry || undefined,
+        rc_details: rcDetails || undefined,
+        color: color || undefined,
+        updated_at: new Date().toISOString(),
+        _syncStatus: 'pending',
+      });
+      setEditingVehicleId(null);
+    } else {
+      await db.vehicles.add({
+        id: crypto.randomUUID(),
+        user_id: 'local-user',
+        name,
+        registration_number: regNo,
+        insurance_expiry: insExpiry || undefined,
+        pollution_expiry: polExpiry || undefined,
+        rc_details: rcDetails || undefined,
+        color: color || undefined,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        _syncStatus: 'pending',
+      });
+    }
 
+    resetForm();
+    setRefreshKey(prev => prev + 1);
+  };
+
+  const resetForm = () => {
     setName('');
     setRegNo('');
     setInsExpiry('');
     setPolExpiry('');
     setRcDetails('');
-    setRefreshKey(prev => prev + 1);
+    setColor('');
+    setEditingVehicleId(null);
+  };
+
+  const editVehicle = (v: LocalVehicle) => {
+    setName(v.name);
+    setRegNo(v.registration_number);
+    setInsExpiry(v.insurance_expiry || '');
+    setPolExpiry(v.pollution_expiry || '');
+    setRcDetails(v.rc_details || '');
+    setColor(v.color || '');
+    setEditingVehicleId(v.id);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const deleteVehicle = async (id: string) => {
@@ -133,7 +167,7 @@ export default function VehiclesPage() {
                 required
               />
             </div>
-            <div className={styles.formGroup}>
+            <div className={styles.formGroupRow}>
               <input
                 type="text"
                 placeholder="Registration Number"
@@ -141,6 +175,13 @@ export default function VehiclesPage() {
                 onChange={(e) => setRegNo(e.target.value)}
                 className={styles.input}
                 required
+              />
+              <input
+                type="text"
+                placeholder="Body Color"
+                value={color}
+                onChange={(e) => setColor(e.target.value)}
+                className={styles.input}
               />
             </div>
             <div className={styles.formGroupRow}>
@@ -172,9 +213,16 @@ export default function VehiclesPage() {
                 className={styles.input}
               />
             </div>
-            <button type="submit" className={styles.submitBtn}>
-              <Plus size={16} /> Save Vehicle
-            </button>
+            <div className={styles.formActions}>
+              <button type="submit" className={styles.submitBtn}>
+                <Plus size={16} /> {editingVehicleId ? 'Update Vehicle' : 'Save Vehicle'}
+              </button>
+              {editingVehicleId && (
+                <button type="button" onClick={resetForm} className={styles.cancelBtn}>
+                  Cancel
+                </button>
+              )}
+            </div>
           </form>
 
           {/* List of vehicles */}
@@ -186,16 +234,21 @@ export default function VehiclesPage() {
               vehicles.map(v => (
                 <div key={v.id} className={styles.vehicleItem}>
                   <div>
-                    <strong className={styles.vehicleName}>{v.name}</strong>
+                    <strong className={styles.vehicleName}>{v.name} {v.color && `(${v.color})`}</strong>
                     <span className={styles.vehicleReg}>Registration: {v.registration_number}</span>
                     <div className={styles.expiryDetails}>
                       {v.insurance_expiry && <span>Insurance Expiry: {v.insurance_expiry}</span>}
                       {v.pollution_expiry && <span>Pollution Expiry: {v.pollution_expiry}</span>}
                     </div>
                   </div>
-                  <button onClick={() => deleteVehicle(v.id)} className={styles.deleteBtn}>
-                    <Trash2 size={16} />
-                  </button>
+                  <div className={styles.actionButtons}>
+                    <button onClick={() => editVehicle(v)} className={styles.editBtn}>
+                      <Edit2 size={16} />
+                    </button>
+                    <button onClick={() => deleteVehicle(v.id)} className={styles.deleteBtn}>
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </div>
               ))
             )}

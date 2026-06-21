@@ -122,6 +122,7 @@ export interface LocalVehicle extends SyncFields {
   rc_details?: string;
   warranty_info?: string;
   road_tax_expiry?: string;
+  color?: string;
   created_at: string;
   updated_at: string;
 }
