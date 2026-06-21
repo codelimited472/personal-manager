@@ -29,7 +29,19 @@ export default function ExpensesPage() {
   const [petrolRate, setPetrolRate] = useState('');
   const [petrolLiters, setPetrolLiters] = useState('');
   const [odometer, setOdometer] = useState('');
-  const [petrolLogs, setPetrolLogs] = useState<LocalPetrolExpense[]>([]);
+
+  type DisplayFuelLog = {
+    id: string;
+    isQuickLog: boolean;
+    odometer?: number;
+    date: string;
+    liters?: number;
+    rate?: number;
+    amount: number;
+    mileage?: number;
+    description?: string;
+  };
+  const [petrolLogs, setPetrolLogs] = useState<DisplayFuelLog[]>([]);
 
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -59,7 +71,30 @@ export default function ExpensesPage() {
         setSelectedVehicleId(cars[0].id);
       }
       const pLogs = await db.petrolExpenses.toArray();
-      setPetrolLogs(pLogs);
+      const allExps = await db.expenses.toArray();
+      const quickPetrol = allExps.filter(e => e.category.toLowerCase() === 'petrol' && !e.description?.startsWith('Fuel for vehicle'));
+
+      const mergedLogs: DisplayFuelLog[] = [
+        ...pLogs.map(l => ({
+          id: l.id,
+          isQuickLog: false,
+          odometer: l.odometer,
+          date: l.date,
+          liters: l.liters,
+          rate: l.rate,
+          amount: l.amount,
+          mileage: l.mileage,
+        })),
+        ...quickPetrol.map(e => ({
+          id: e.id,
+          isQuickLog: true,
+          date: e.date,
+          amount: e.amount,
+          description: e.description,
+        }))
+      ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+      setPetrolLogs(mergedLogs);
     }
     loadData();
   }, [refreshKey]);
@@ -113,25 +148,55 @@ export default function ExpensesPage() {
   };
 
   // Petrol Action
+  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setPetrolAmount(val);
+    if (val && petrolRate) setPetrolLiters((parseFloat(val) / parseFloat(petrolRate)).toFixed(2));
+  };
+  const handleRateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setPetrolRate(val);
+    if (val && petrolAmount) setPetrolLiters((parseFloat(petrolAmount) / parseFloat(val)).toFixed(2));
+    else if (val && petrolLiters) setPetrolAmount((parseFloat(petrolLiters) * parseFloat(val)).toFixed(2));
+  };
+  const handleLitersChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    setPetrolLiters(val);
+    if (val && petrolRate) setPetrolAmount((parseFloat(val) * parseFloat(petrolRate)).toFixed(2));
+  };
+
   const addPetrolExpense = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!petrolAmount || !selectedVehicleId || !petrolRate || !odometer) return;
+    if (!selectedVehicleId) return;
+    
+    // Require 2 out of 3: Amount, Rate, Liters
     const amt = parseFloat(petrolAmount);
     const rate = parseFloat(petrolRate);
-    const ltrs = parseFloat(petrolLiters) || (amt / rate);
-    const odo = parseInt(odometer, 10);
+    const ltrs = parseFloat(petrolLiters);
+    const odo = parseInt(odometer, 10) || 0; // Odometer is now optional
 
-    if (ltrs <= 0 || odo < 0) return;
+    if (isNaN(amt) && (isNaN(rate) || isNaN(ltrs))) return;
+    if (isNaN(rate) && (isNaN(amt) || isNaN(ltrs))) return;
+    if (isNaN(ltrs) && (isNaN(amt) || isNaN(rate))) return;
 
-    // Calculate Mileage based on previous odometer reading
+    const finalAmt = isNaN(amt) ? rate * ltrs : amt;
+    const finalRate = isNaN(rate) ? amt / ltrs : rate;
+    const finalLtrs = isNaN(ltrs) ? amt / rate : ltrs;
+
+    if (finalLtrs <= 0) return;
+
+    // Calculate Mileage based on previous odometer reading (only if current odo is provided > 0)
     let calculatedMileage = undefined;
-    const previousLogs = petrolLogs
-      .filter(l => l.vehicle_id === selectedVehicleId)
-      .sort((a, b) => b.odometer - a.odometer);
-    if (previousLogs.length > 0) {
-      const diffKm = odo - previousLogs[0].odometer;
-      if (diffKm > 0) {
-        calculatedMileage = diffKm / ltrs;
+    if (odo > 0) {
+      const pLogs = await db.petrolExpenses.toArray();
+      const previousLogs = pLogs
+        .filter(l => l.vehicle_id === selectedVehicleId && l.odometer > 0)
+        .sort((a, b) => b.odometer - a.odometer);
+      if (previousLogs.length > 0) {
+        const diffKm = odo - previousLogs[0].odometer;
+        if (diffKm > 0) {
+          calculatedMileage = diffKm / finalLtrs;
+        }
       }
     }
 
@@ -139,9 +204,9 @@ export default function ExpensesPage() {
       id: crypto.randomUUID(),
       user_id: 'local-user',
       vehicle_id: selectedVehicleId,
-      amount: amt,
-      rate,
-      liters: ltrs,
+      amount: finalAmt,
+      rate: finalRate,
+      liters: finalLtrs,
       odometer: odo,
       mileage: calculatedMileage,
       date: new Date().toISOString().split('T')[0],
@@ -153,9 +218,9 @@ export default function ExpensesPage() {
     await db.expenses.add({
       id: crypto.randomUUID(),
       user_id: 'local-user',
-      amount: amt,
+      amount: finalAmt,
       category: 'Petrol',
-      description: `Fuel for vehicle (Odo: ${odo}km) - ${ltrs.toFixed(2)}L @ ₹${rate}/L`,
+      description: `Fuel for vehicle ${odo > 0 ? `(Odo: ${odo}km)` : ''} - ${finalLtrs.toFixed(2)}L @ ₹${finalRate}/L`,
       date: new Date().toISOString().split('T')[0],
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
@@ -350,11 +415,11 @@ export default function ExpensesPage() {
                 <div className={styles.formGroup}>
                   <input
                     type="number"
+                    step="0.01"
                     placeholder="Amount Spent (₹)"
                     value={petrolAmount}
-                    onChange={(e) => setPetrolAmount(e.target.value)}
+                    onChange={handleAmountChange}
                     className={styles.input}
-                    required
                   />
                 </div>
                 <div className={styles.formGroup}>
@@ -363,28 +428,27 @@ export default function ExpensesPage() {
                     step="0.01"
                     placeholder="Rate per Liter (₹/L)"
                     value={petrolRate}
-                    onChange={(e) => setPetrolRate(e.target.value)}
+                    onChange={handleRateChange}
                     className={styles.input}
-                    required
                   />
                 </div>
                 <div className={styles.formGroup}>
                   <input
                     type="number"
-                    placeholder="Liters purchased (Optional)"
+                    step="0.01"
+                    placeholder="Liters purchased"
                     value={petrolLiters}
-                    onChange={(e) => setPetrolLiters(e.target.value)}
+                    onChange={handleLitersChange}
                     className={styles.input}
                   />
                 </div>
                 <div className={styles.formGroup}>
                   <input
                     type="number"
-                    placeholder="Odometer Reading (km)"
+                    placeholder="Odometer Reading (km) - Optional"
                     value={odometer}
                     onChange={(e) => setOdometer(e.target.value)}
                     className={styles.input}
-                    required
                   />
                 </div>
                 <button type="submit" className={styles.submitBtn}>
@@ -401,16 +465,27 @@ export default function ExpensesPage() {
                   petrolLogs.map(log => (
                     <div key={log.id} className={styles.logItem}>
                       <div>
-                        <strong className={styles.logTitle}>
-                          Odometer: {log.odometer} km
-                        </strong>
-                        <span className={styles.logSub}>
-                          {log.date} • {log.liters.toFixed(2)}L @ ₹{log.rate}/L
-                        </span>
+                        {log.isQuickLog ? (
+                          <>
+                            <strong className={styles.logTitle}>Quick Fuel Log</strong>
+                            <span className={styles.logSub}>
+                              {log.date} {log.description && `• ${log.description}`}
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            <strong className={styles.logTitle}>
+                              Odometer: {log.odometer && log.odometer > 0 ? `${log.odometer} km` : 'Not recorded'}
+                            </strong>
+                            <span className={styles.logSub}>
+                              {log.date} • {log.liters?.toFixed(2)}L @ ₹{log.rate}/L
+                            </span>
+                          </>
+                        )}
                       </div>
                       <div className={styles.logRight}>
-                        <span className={styles.logAmount}>${log.amount}</span>
-                        {log.mileage && (
+                        <span className={styles.logAmount}>₹{log.amount}</span>
+                        {!log.isQuickLog && log.mileage && (
                           <span className={styles.mileageBadge}>
                             {log.mileage.toFixed(1)} km/L
                           </span>
