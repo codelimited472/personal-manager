@@ -1,7 +1,15 @@
 import { createClient } from '@/lib/supabase/client';
 import { getDB, type SyncStatus } from '@/lib/db';
 
-type SyncableTable = 'tasks' | 'habits' | 'habitLogs' | 'waterLogs' | 'expenses' | 'captures' | 'notifications' | 'settings';
+type SyncableTable = 
+  | 'tasks' | 'habits' | 'habitLogs' | 'waterLogs' | 'expenses' 
+  | 'captures' | 'notifications' | 'settings'
+  | 'vehicles' | 'vehicleIssues' | 'petrolExpenses' 
+  | 'employeeProfiles' | 'employeeExpenses' | 'trips' | 'tripExpenses' | 'tripPackingItems'
+  | 'places' | 'restaurants' | 'buyItems' | 'inventoryItems' | 'expiryItems'
+  | 'wardrobeItems' | 'outfits' | 'documents' | 'businessWorkspaces' | 'businessTasks'
+  | 'businessNotes' | 'businessIdeas' | 'businessDocuments' | 'businessContacts'
+  | 'notes' | 'ideas';
 
 // Maps local Dexie table names to Supabase table names
 const tableMap: Record<SyncableTable, string> = {
@@ -13,6 +21,30 @@ const tableMap: Record<SyncableTable, string> = {
   captures: 'captures',
   notifications: 'notifications',
   settings: 'settings',
+  vehicles: 'vehicles',
+  vehicleIssues: 'vehicle_issues',
+  petrolExpenses: 'petrol_expenses',
+  employeeProfiles: 'employee_profiles',
+  employeeExpenses: 'employee_expenses',
+  trips: 'trips',
+  tripExpenses: 'trip_expenses',
+  tripPackingItems: 'trip_packing_items',
+  places: 'places',
+  restaurants: 'restaurants',
+  buyItems: 'buy_items',
+  inventoryItems: 'inventory_items',
+  expiryItems: 'expiry_items',
+  wardrobeItems: 'wardrobe_items',
+  outfits: 'outfits',
+  documents: 'documents',
+  businessWorkspaces: 'business_workspaces',
+  businessTasks: 'business_tasks',
+  businessNotes: 'business_notes',
+  businessIdeas: 'business_ideas',
+  businessDocuments: 'business_documents',
+  businessContacts: 'business_contacts',
+  notes: 'notes',
+  ideas: 'ideas',
 };
 
 /**
@@ -134,7 +166,7 @@ export async function syncTable(tableName: SyncableTable, userId: string): Promi
  * Sync all tables
  */
 export async function syncAll(userId: string): Promise<void> {
-  const tables: SyncableTable[] = ['tasks', 'habits', 'habitLogs', 'waterLogs', 'expenses', 'captures', 'settings'];
+  const tables: SyncableTable[] = Object.keys(tableMap) as SyncableTable[];
 
   await Promise.allSettled(
     tables.map(table => syncTable(table, userId))
@@ -146,7 +178,7 @@ export async function syncAll(userId: string): Promise<void> {
  */
 export async function getPendingCount(): Promise<number> {
   const db = getDB();
-  const tables: SyncableTable[] = ['tasks', 'habits', 'habitLogs', 'waterLogs', 'expenses', 'captures', 'settings'];
+  const tables: SyncableTable[] = Object.keys(tableMap) as SyncableTable[];
 
   const counts = await Promise.all(
     tables.map(table =>

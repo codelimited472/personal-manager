@@ -121,6 +121,8 @@ export default function ExpensesPage() {
     const ltrs = parseFloat(petrolLiters) || (amt / rate);
     const odo = parseInt(odometer, 10);
 
+    if (ltrs <= 0 || odo < 0) return;
+
     // Calculate Mileage based on previous odometer reading
     let calculatedMileage = undefined;
     const previousLogs = petrolLogs
@@ -144,6 +146,19 @@ export default function ExpensesPage() {
       mileage: calculatedMileage,
       date: new Date().toISOString().split('T')[0],
       created_at: new Date().toISOString(),
+      _syncStatus: 'pending',
+    });
+
+    // Also store it in the main expenses log
+    await db.expenses.add({
+      id: crypto.randomUUID(),
+      user_id: 'local-user',
+      amount: amt,
+      category: 'Petrol',
+      description: `Fuel for vehicle (Odo: ${odo}km) - ${ltrs.toFixed(2)}L @ ₹${rate}/L`,
+      date: new Date().toISOString().split('T')[0],
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
       _syncStatus: 'pending',
     });
 
