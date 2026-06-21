@@ -17,7 +17,7 @@ const mockUser = {
   id: 'local-user',
   email: 'local@example.com',
   user_metadata: { full_name: 'Local User' },
-} as User;
+} as unknown as User;
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(mockUser);

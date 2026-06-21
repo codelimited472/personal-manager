@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useHabits } from '@/features/habits/hooks/useHabits';
 import { useAuth } from '@/features/auth/hooks/useAuth';
@@ -15,7 +15,7 @@ const HABIT_COLORS = [
   '#7c6cf0', '#00d4c8', '#ff6b8a', '#ffc857', '#64b5f6', '#00c9a7', '#ff9ff3', '#f368e0',
 ];
 
-export default function HabitsPage() {
+function HabitsContent() {
   const searchParams = useSearchParams();
   const { user } = useAuth();
   const { habits, completionRate } = useHabits();
@@ -197,5 +197,13 @@ export default function HabitsPage() {
         </>
       )}
     </div>
+  );
+}
+
+export default function HabitsPage() {
+  return (
+    <Suspense fallback={<div className="page" style={{display:'flex',justifyContent:'center',alignItems:'center'}}>Loading...</div>}>
+      <HabitsContent />
+    </Suspense>
   );
 }

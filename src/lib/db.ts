@@ -476,7 +476,9 @@ let dbInstance: PersonalManagerDB | null = null;
 
 export function getDB(): PersonalManagerDB {
   if (typeof window === 'undefined') {
-    throw new Error('Dexie can only be used in the browser');
+    // Return a dummy object during Server-Side Rendering
+    // since Dexie cannot be used in Node.js
+    return {} as PersonalManagerDB;
   }
   if (!dbInstance) {
     dbInstance = new PersonalManagerDB();

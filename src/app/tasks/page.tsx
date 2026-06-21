@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useTasks } from '@/features/tasks/hooks/useTasks';
 import TaskList from '@/features/tasks/components/TaskList';
@@ -9,7 +9,7 @@ import { Plus, Calendar as CalendarIcon, Clock } from 'lucide-react';
 import { getToday, addDays, format } from '@/lib/utils';
 import styles from './tasks.module.css';
 
-export default function TasksPage() {
+function TasksContent() {
   const searchParams = useSearchParams();
   const [showForm, setShowForm] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string>(getToday());
@@ -130,5 +130,13 @@ export default function TasksPage() {
         </>
       )}
     </div>
+  );
+}
+
+export default function TasksPage() {
+  return (
+    <Suspense fallback={<div className="page" style={{display:'flex',justifyContent:'center',alignItems:'center'}}>Loading...</div>}>
+      <TasksContent />
+    </Suspense>
   );
 }
