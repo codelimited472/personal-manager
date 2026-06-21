@@ -40,6 +40,14 @@ export async function pushPendingChanges(tableName: SyncableTable): Promise<numb
 
       const idField = tableName === 'settings' ? 'key' : 'id';
 
+      if (data.user_id === 'local-user' || record[idField] === 'local-user') {
+        // Automatically mark offline test data as synced to avoid Supabase UUID errors
+        await (db[tableName] as ReturnType<typeof db.table>).update(record[idField], {
+          _syncStatus: 'synced' as SyncStatus,
+        });
+        continue;
+      }
+
       const { error } = await supabase
         .from(supabaseTable)
         .upsert(data, { onConflict: idField });
@@ -52,7 +60,7 @@ export async function pushPendingChanges(tableName: SyncableTable): Promise<numb
         });
         synced++;
       } else {
-        console.error(`Sync error for ${tableName}:`, error);
+        console.warn(`[Sync] Push warning for ${tableName}:`, error.message || JSON.stringify(error));
       }
     } catch (err) {
       console.error(`Failed to sync ${tableName} record:`, err);
@@ -78,12 +86,12 @@ export async function pullFromSupabase(
     .from(supabaseTable)
     .select('*')
     .eq('user_id', userId)
-    .order('updated_at', { ascending: false })
+    .order('created_at', { ascending: false })
     .limit(500);
 
   // Only pull records updated after last sync
   if (lastSyncedAt) {
-    query = query.gt('updated_at', lastSyncedAt);
+    query = query.gt('created_at', lastSyncedAt);
   }
 
   const { data, error } = await query;
