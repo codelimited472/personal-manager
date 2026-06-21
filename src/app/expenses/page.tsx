@@ -5,6 +5,7 @@ import { Wallet, Users, Car, Plus, Trash2, CheckCircle2, TrendingUp, Landmark } 
 import { getDB, type LocalExpense, type LocalEmployeeProfile, type LocalEmployeeExpense, type LocalPetrolExpense, type LocalVehicle } from '@/lib/db';
 import QuickExpenseLog from '@/components/QuickExpenseLog';
 import styles from './expenses.module.css';
+import pageStyles from '@/app/page.module.css';
 
 export default function ExpensesPage() {
   const [activeTab, setActiveTab] = useState<'personal' | 'employee' | 'petrol'>('personal');
@@ -234,6 +235,21 @@ export default function ExpensesPage() {
     setRefreshKey(prev => prev + 1);
   };
 
+  // Analytics Calculations
+  const todayStr = new Date().toISOString().split('T')[0];
+  const currentMonthStr = todayStr.substring(0, 7);
+  const currentYearStr = todayStr.substring(0, 4);
+
+  const todaySpend = expenses.filter(e => e.date === todayStr).reduce((sum, e) => sum + e.amount, 0);
+  const monthlySpend = expenses.filter(e => e.date.startsWith(currentMonthStr)).reduce((sum, e) => sum + e.amount, 0);
+  const yearlySpend = expenses.filter(e => e.date.startsWith(currentYearStr)).reduce((sum, e) => sum + e.amount, 0);
+
+  const spendByMethod = expenses.reduce((acc, exp) => {
+    const method = exp.payment_method || 'Cash / Other';
+    acc[method] = (acc[method] || 0) + exp.amount;
+    return acc;
+  }, {} as Record<string, number>);
+
   return (
     <div className="page">
       {/* Tabs */}
@@ -261,6 +277,33 @@ export default function ExpensesPage() {
       {/* 1. Personal tab */}
       {activeTab === 'personal' && (
         <div>
+          <h3 className={styles.sectionHeader} style={{ marginBottom: '1rem' }}>Expense Overview</h3>
+          <div className={pageStyles.statsGrid}>
+            <div className={pageStyles.statCard}>
+              <div className={pageStyles.statValue}>₹{todaySpend}</div>
+              <div className={pageStyles.statLabel}>Today's Spend</div>
+            </div>
+            <div className={pageStyles.statCard}>
+              <div className={pageStyles.statValue}>₹{monthlySpend}</div>
+              <div className={pageStyles.statLabel}>Monthly Spend</div>
+            </div>
+            <div className={pageStyles.statCard}>
+              <div className={pageStyles.statValue}>₹{yearlySpend}</div>
+              <div className={pageStyles.statLabel}>Yearly Spend</div>
+            </div>
+          </div>
+
+          {Object.keys(spendByMethod).length > 0 && (
+            <div className={pageStyles.statsGrid} style={{ marginTop: '-1rem' }}>
+              {Object.entries(spendByMethod).map(([method, amount]) => (
+                <div key={method} className={pageStyles.statCard}>
+                  <div className={pageStyles.statValue}>₹{amount}</div>
+                  <div className={pageStyles.statLabel}>{method}</div>
+                </div>
+              ))}
+            </div>
+          )}
+
           <QuickExpenseLog onExpenseAdded={() => setRefreshKey(prev => prev + 1)} />
 
           <div className={styles.listSection}>

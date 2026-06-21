@@ -199,12 +199,16 @@ export default function Home() {
           <div className={styles.statValue}>{waterAmount}ml</div>
           <div className={styles.statLabel}>Water Intake</div>
         </div>
-        <div className={styles.statCard}>
+        <div 
+          className={styles.statCard} 
+          onClick={() => router.push('/expenses')}
+          style={{ cursor: 'pointer' }}
+        >
           <Wallet className={styles.statIconExpense} />
           <div className={styles.statValue}>
-            ₹{expenses.reduce((sum, e) => sum + e.amount, 0).toFixed(0)}
+            ₹{expenses.filter(e => e.date === new Date().toISOString().split('T')[0]).reduce((sum, e) => sum + e.amount, 0).toFixed(0)}
           </div>
-          <div className={styles.statLabel}>Recent Spending</div>
+          <div className={styles.statLabel}>Today's Spend</div>
         </div>
         <div className={styles.statCard}>
           <CheckSquare className={styles.statIconTasks} />
