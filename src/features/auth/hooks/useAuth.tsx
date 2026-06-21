@@ -13,23 +13,29 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
+const mockUser = {
+  id: 'local-user',
+  email: 'local@example.com',
+  user_metadata: { full_name: 'Local User' },
+} as User;
+
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(mockUser);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const supabase = createClient();
 
     // Get initial session
     supabase.auth.getUser().then((res: { data: { user: User | null } }) => {
-      setUser(res.data?.user ?? null);
+      setUser(res.data?.user ?? mockUser);
       setLoading(false);
     });
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_event: any, session: any) => {
-        setUser(session?.user ?? null);
+        setUser(session?.user ?? mockUser);
         setLoading(false);
       }
     );
