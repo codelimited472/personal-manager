@@ -97,14 +97,6 @@ export default function ShoppingPage() {
 
   return (
     <div className={styles.container}>
-      <h1 className={styles.pageTitle}>
-        <ShoppingCart size={24} color="var(--accent-primary)" />
-        Shopping & Buy List
-      </h1>
-      <p style={{ color: 'var(--text-secondary)', marginBottom: '2rem' }}>
-        Create custom lists, add items, and track your purchases.
-      </p>
-
       {/* Lists Tab Bar */}
       <div className={styles.tabBar}>
         {availableLists.map(listName => (
