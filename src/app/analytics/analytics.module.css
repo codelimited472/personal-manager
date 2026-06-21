@@ -1,0 +1,80 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.metricCard {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-xl);
+  padding: var(--space-5);
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  box-shadow: var(--shadow-sm);
+}
+
+.metricCard h3 {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.metricCard h2 {
+  font-size: var(--text-3xl);
+  font-weight: var(--weight-bold);
+  color: var(--text-primary);
+}
+
+.metricCard p {
+  font-size: var(--text-xs);
+  color: var(--accent-success);
+  font-weight: var(--weight-semibold);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-4);
+}
+
+.card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-secondary);
+  border-radius: var(--radius-xl);
+  padding: var(--space-4);
+  box-shadow: var(--shadow-sm);
+}
+
+.card h4 {
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  font-weight: var(--weight-bold);
+  margin-bottom: var(--space-3);
+  border-bottom: 1px solid var(--border-secondary);
+  padding-bottom: var(--space-2);
+}
+
+.item {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--text-xs);
+  padding: var(--space-2) 0;
+  border-bottom: 1px dashed var(--border-secondary);
+}
+
+.item:last-child {
+  border-bottom: none;
+}
+
+.item span {
+  color: var(--text-secondary);
+}
+
+.item strong {
+  color: var(--text-primary);
+}
+
+.iconTrend { color: var(--accent-success); }
+.iconHabit { color: var(--accent-primary); }
+.iconWater { color: var(--accent-secondary); }

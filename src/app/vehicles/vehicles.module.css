@@ -1,0 +1,183 @@
+.tabBar {
+  display: flex;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-xl);
+  padding: var(--space-1);
+  margin-bottom: var(--space-5);
+  gap: var(--space-1);
+}
+
+.tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-2);
+  border-radius: var(--radius-lg);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-secondary);
+  transition: all var(--transition-fast);
+}
+
+.tabActive {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-2);
+  border-radius: var(--radius-lg);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  color: var(--text-primary);
+  background: var(--bg-tertiary);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Forms */
+.formCard {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-xl);
+  padding: var(--space-4);
+  margin-bottom: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: var(--shadow-sm);
+}
+
+.formTitle {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  border-bottom: 1px solid var(--border-secondary);
+  padding-bottom: var(--space-2);
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+}
+
+.formGroupRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+
+.label {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  font-weight: var(--weight-semibold);
+  margin-bottom: 4px;
+  display: block;
+}
+
+.input {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-secondary);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-base);
+  color: var(--text-primary);
+  width: 100%;
+}
+
+.submitBtn {
+  background: var(--accent-primary);
+  color: white;
+  border-radius: var(--radius-lg);
+  padding: var(--space-3) var(--space-4);
+  font-weight: var(--weight-bold);
+  font-size: var(--text-base);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  box-shadow: var(--shadow-glow);
+}
+
+/* Vehicle List */
+.vehiclesList, .issuesList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.vehicleItem, .issueItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-secondary);
+  border-radius: var(--radius-xl);
+  padding: var(--space-4);
+  box-shadow: var(--shadow-sm);
+  position: relative;
+}
+
+.vehicleName, .issueTitle {
+  font-size: var(--text-base);
+  font-weight: var(--weight-bold);
+  color: var(--text-primary);
+  display: block;
+}
+
+.vehicleReg, .issueVehicle {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+.expiryDetails {
+  display: flex;
+  flex-direction: column;
+  margin-top: 4px;
+  font-size: var(--text-xs);
+  color: var(--accent-danger);
+  font-weight: var(--weight-semibold);
+}
+
+.deleteBtn {
+  color: var(--text-secondary);
+  padding: var(--space-2);
+  border-radius: var(--radius-full);
+}
+
+.deleteBtn:hover {
+  background: var(--accent-danger-muted);
+  color: var(--accent-danger);
+}
+
+.issueDesc {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+.resolveBtn {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-bold);
+  padding: 6px var(--space-3);
+  border-radius: var(--radius-full);
+  text-transform: capitalize;
+}
+
+.sectionHeader {
+  font-size: var(--text-md);
+  font-weight: var(--weight-bold);
+  color: var(--text-primary);
+  margin-bottom: var(--space-3);
+}
+
+.emptyState {
+  text-align: center;
+  color: var(--text-secondary);
+  padding: var(--space-6) 0;
+  font-size: var(--text-sm);
+}

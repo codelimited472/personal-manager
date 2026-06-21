@@ -1,0 +1,214 @@
+.tabBar {
+  display: flex;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-xl);
+  padding: var(--space-1);
+  margin-bottom: var(--space-5);
+  gap: var(--space-1);
+}
+
+.tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-3) var(--space-2);
+  border-radius: var(--radius-lg);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--text-secondary);
+  transition: all var(--transition-fast);
+}
+
+.tabActive {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-3) var(--space-2);
+  border-radius: var(--radius-lg);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  color: var(--text-primary);
+  background: var(--bg-tertiary);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Forms */
+.formCard {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-xl);
+  padding: var(--space-4);
+  margin-bottom: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: var(--shadow-sm);
+}
+
+.formTitle {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  border-bottom: 1px solid var(--border-secondary);
+  padding-bottom: var(--space-2);
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+}
+
+.formGroupRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2);
+}
+
+.input {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-secondary);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-base);
+  color: var(--text-primary);
+  width: 100%;
+}
+
+.submitBtn {
+  background: var(--accent-primary);
+  color: white;
+  border-radius: var(--radius-lg);
+  padding: var(--space-3) var(--space-4);
+  font-weight: var(--weight-bold);
+  font-size: var(--text-base);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  box-shadow: var(--shadow-glow);
+}
+
+/* Listings */
+.inventoryList, .expiriesList, .buyList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.itemCard, .expiryCard, .buyCard {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-secondary);
+  border-radius: var(--radius-xl);
+  padding: var(--space-4);
+  box-shadow: var(--shadow-sm);
+}
+
+.purchasedCard {
+  display: flex;
+  align-items: center;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-secondary);
+  border-radius: var(--radius-xl);
+  padding: var(--space-4);
+  opacity: 0.6;
+}
+
+.buyCard {
+  display: flex;
+  align-items: center;
+}
+
+.checkbox {
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--border-focus);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: var(--space-3);
+  cursor: pointer;
+}
+
+.purchasedCard .checkbox {
+  background: var(--accent-success);
+  border-color: var(--accent-success);
+}
+
+.buyDetails {
+  flex: 1;
+}
+
+.purchasedText {
+  color: var(--text-secondary);
+  text-decoration: line-through;
+  font-size: var(--text-base);
+}
+
+.buyNameText {
+  color: var(--text-primary);
+  font-size: var(--text-base);
+  font-weight: var(--weight-medium);
+}
+
+.buySub {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  display: block;
+}
+
+.itemName, .expNameText {
+  font-size: var(--text-base);
+  font-weight: var(--weight-bold);
+  color: var(--text-primary);
+  display: block;
+}
+
+.itemSub, .expSub {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+.rightInfo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.priceTag {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-bold);
+  color: var(--accent-primary);
+}
+
+.expDateText {
+  font-size: var(--text-xs);
+  color: var(--accent-danger);
+  font-weight: var(--weight-bold);
+}
+
+.deleteBtn {
+  color: var(--text-secondary);
+  padding: var(--space-2);
+  border-radius: var(--radius-full);
+}
+
+.deleteBtn:hover {
+  background: var(--accent-danger-muted);
+  color: var(--accent-danger);
+}
+
+.sectionHeader {
+  font-size: var(--text-md);
+  font-weight: var(--weight-bold);
+  color: var(--text-primary);
+  margin-bottom: var(--space-3);
+}

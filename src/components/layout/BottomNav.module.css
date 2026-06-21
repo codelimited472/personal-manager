@@ -1,0 +1,99 @@
+.nav {
+  position: fixed;
+  bottom: var(--space-4);
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - var(--space-8));
+  max-width: calc(var(--max-width) - var(--space-8));
+  display: flex;
+  align-items: stretch;
+  justify-content: space-around;
+  height: 4.5rem;
+  background: var(--bg-glass);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: var(--radius-full);
+  box-shadow: var(--shadow-lg), 0 0 0 1px var(--border-secondary);
+  z-index: var(--z-fixed);
+  backdrop-filter: blur(24px) saturate(150%);
+  -webkit-backdrop-filter: blur(24px) saturate(150%);
+  padding: 0 var(--space-2);
+}
+
+.navItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  flex: 1;
+  text-decoration: none;
+  color: var(--text-tertiary);
+  position: relative;
+  transition: all var(--transition-base);
+  min-width: 0;
+  padding: var(--space-1) 0;
+  -webkit-tap-highlight-color: transparent;
+  border-radius: var(--radius-full);
+  margin: var(--space-1);
+}
+
+.navItem:hover {
+  background: rgba(255, 255, 255, 0.5);
+  color: var(--text-secondary);
+}
+
+.navItem:active {
+  transform: scale(0.92);
+}
+
+.navItemActive {
+  color: var(--accent-primary);
+  background: var(--bg-secondary);
+  box-shadow: var(--shadow-sm);
+}
+
+.navIcon {
+  transition: transform var(--transition-base), color var(--transition-base);
+}
+
+.navIconActive {
+  color: var(--accent-primary);
+  transform: scale(1.15) translateY(-2px);
+}
+
+.navLabel {
+  font-size: 0.65rem;
+  font-weight: var(--weight-medium);
+  letter-spacing: 0.02em;
+  transition: all var(--transition-base);
+}
+
+.navLabelActive {
+  color: var(--accent-primary);
+  font-weight: var(--weight-bold);
+  transform: translateY(-1px);
+}
+
+.navIndicator {
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  background: var(--accent-primary);
+  border-radius: var(--radius-full);
+  animation: fadeInScale 0.2s ease-out;
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) scale(0.5);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) scale(1);
+  }
+}
+

@@ -1,0 +1,125 @@
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: calc(var(--z-fixed) - 1);
+  animation: fadeIn 0.2s ease-out;
+}
+
+.menu {
+  position: fixed;
+  bottom: calc(var(--nav-height) + var(--safe-area-bottom) + var(--space-4) + 64px);
+  right: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  z-index: var(--z-fixed);
+}
+
+.menuItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-direction: row-reverse;
+  animation: fadeInUp 0.25s ease-out both;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.menuIcon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-lg);
+  transition: transform var(--transition-fast);
+}
+
+.menuItem:active .menuIcon {
+  transform: scale(0.9);
+}
+
+.menuLabel {
+  background: var(--bg-elevated);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-md);
+  white-space: nowrap;
+}
+
+.captureForm {
+  display: flex;
+  align-items: center;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-xl);
+  padding: var(--space-2) var(--space-3);
+  gap: var(--space-2);
+  width: 280px;
+  box-shadow: var(--shadow-lg);
+  margin-bottom: var(--space-2);
+  animation: fadeInUp 0.25s ease-out;
+}
+
+.captureInput {
+  flex: 1;
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  border: none;
+  outline: none;
+}
+
+.micBtn, .sendBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  color: var(--text-secondary);
+  transition: all var(--transition-fast);
+}
+
+.micBtn:hover {
+  background: var(--bg-surface);
+  color: var(--accent-primary);
+}
+
+.listening {
+  background: var(--accent-danger-muted);
+  color: var(--accent-danger);
+  animation: pulse 1.5s infinite;
+}
+
+.sendBtn {
+  color: var(--accent-primary);
+}
+
+.sendBtn:disabled {
+  color: var(--text-disabled);
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+.fab {
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@media (min-width: 768px) {
+  .menu {
+    right: calc(50% - min(300px, 220px));
+  }
+}
+

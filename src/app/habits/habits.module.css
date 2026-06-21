@@ -1,0 +1,183 @@
+.progressSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--space-4) 0 var(--space-6);
+}
+
+.ring {
+  position: relative;
+  width: 140px;
+  height: 140px;
+}
+
+.ringSvg {
+  width: 100%;
+  height: 100%;
+}
+
+.ringProgress {
+  transition: stroke-dashoffset 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ringText {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.ringValue {
+  font-size: var(--text-3xl);
+  font-weight: var(--weight-bold);
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.ringLabel {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  font-weight: var(--weight-medium);
+}
+
+.progressSub {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  margin-top: var(--space-2);
+}
+
+/* Habit list */
+.habitList {
+  margin-bottom: var(--space-4);
+}
+
+.habitItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-secondary);
+  border-radius: var(--radius-xl);
+  margin-bottom: var(--space-2);
+  transition: all var(--transition-fast);
+  animation: fadeInUp 0.2s ease-out both;
+}
+
+.habitCompleted {
+  opacity: 0.7;
+}
+
+.habitToggle {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-full);
+  border: 2.5px solid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.habitToggle:active {
+  transform: scale(0.85);
+}
+
+.habitContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.habitName {
+  font-size: var(--text-base);
+  font-weight: var(--weight-medium);
+  color: var(--text-primary);
+}
+
+.habitMeta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: 2px;
+}
+
+.streak {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: var(--text-xs);
+  color: var(--accent-warning);
+  font-weight: var(--weight-medium);
+}
+
+.habitDelete {
+  color: var(--text-tertiary);
+  opacity: 0.4;
+  padding: var(--space-1);
+  transition: all var(--transition-fast);
+}
+
+.habitItem:hover .habitDelete,
+.habitDelete:focus {
+  opacity: 1;
+}
+
+.habitDelete:hover {
+  color: var(--accent-danger);
+}
+
+/* Color picker */
+.colorPicker {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.colorDot {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-full);
+  border: 3px solid transparent;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.colorDot:hover {
+  transform: scale(1.15);
+}
+
+.colorDotActive {
+  border-color: var(--text-primary);
+  box-shadow: 0 0 0 2px var(--bg-primary);
+  transform: scale(1.1);
+}
+
+/* Add button */
+.addBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-3);
+  background: var(--bg-glass);
+  border: 1px dashed var(--border-primary);
+  border-radius: var(--radius-lg);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.addBtn:hover {
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+}

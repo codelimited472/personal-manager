@@ -1,0 +1,107 @@
+.item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  transition: all var(--transition-fast);
+  animation: fadeInUp 0.2s ease-out both;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-secondary);
+  margin-bottom: var(--space-2);
+}
+
+.item:active {
+  background: var(--bg-glass-hover);
+}
+
+.itemCompleted {
+  opacity: 0.6;
+}
+
+/* Checkbox */
+.checkbox {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-full);
+  border: 2px solid var(--border-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all var(--transition-fast);
+  background: transparent;
+  cursor: pointer;
+  margin-top: 2px;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.checkbox:active {
+  transform: scale(0.85);
+}
+
+.checkboxChecked {
+  background: var(--accent-success);
+  border-color: var(--accent-success);
+  animation: popIn 0.3s ease-out;
+}
+
+/* Content */
+.content {
+  flex: 1;
+  min-width: 0;
+}
+
+.title {
+  font-size: var(--text-base);
+  font-weight: var(--weight-medium);
+  color: var(--text-primary);
+  display: block;
+  word-break: break-word;
+}
+
+.titleCompleted {
+  text-decoration: line-through;
+  color: var(--text-tertiary);
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+  flex-wrap: wrap;
+}
+
+.metaItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+.metaDanger {
+  color: var(--accent-danger);
+  font-weight: var(--weight-bold);
+}
+
+/* Delete */
+.deleteBtn {
+  color: var(--text-tertiary);
+  padding: var(--space-1);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+  opacity: 0.5;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.deleteBtn:hover {
+  color: var(--accent-danger);
+  opacity: 1;
+}
+
+.item:hover .deleteBtn {
+  opacity: 1;
+}

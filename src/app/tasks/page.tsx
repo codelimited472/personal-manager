@@ -1,0 +1,134 @@
+'use client';
+
+import { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { useTasks } from '@/features/tasks/hooks/useTasks';
+import TaskList from '@/features/tasks/components/TaskList';
+import TaskForm from '@/features/tasks/components/TaskForm';
+import { Plus, Calendar as CalendarIcon, Clock } from 'lucide-react';
+import { getToday, addDays, format } from '@/lib/utils';
+import styles from './tasks.module.css';
+
+export default function TasksPage() {
+  const searchParams = useSearchParams();
+  const [showForm, setShowForm] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<string>(getToday());
+  const [dateStrip, setDateStrip] = useState<{ dateStr: string; displayDay: string; displayNum: string }[]>([]);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const { tasks, todayTasks, upcomingTasks, stats } = useTasks({ date: selectedDate });
+
+  // Generate 15 days (7 days before, today, 7 days after)
+  useEffect(() => {
+    const today = new Date();
+    const strip = [];
+    for (let i = -7; i <= 7; i++) {
+      const d = addDays(today, i);
+      strip.push({
+        dateStr: format(d, 'yyyy-MM-dd'),
+        displayDay: format(d, 'EEE'),
+        displayNum: format(d, 'd'),
+      });
+    }
+    setDateStrip(strip);
+    
+    // Scroll to center (today)
+    setTimeout(() => {
+      if (scrollRef.current) {
+        const center = scrollRef.current.scrollWidth / 2 - scrollRef.current.clientWidth / 2;
+        scrollRef.current.scrollTo({ left: center, behavior: 'smooth' });
+      }
+    }, 100);
+  }, []);
+
+  // Open form if redirected from Quick Add
+  useEffect(() => {
+    if (searchParams.get('add') === 'true') {
+      setShowForm(true);
+    }
+  }, [searchParams]);
+
+  const displayTasks = selectedDate === getToday() ? todayTasks : tasks;
+
+  return (
+    <div className="page">
+      {/* Calendar Strip */}
+      <div className={styles.calendarStrip} ref={scrollRef}>
+        {dateStrip.map(day => (
+          <div 
+            key={day.dateStr}
+            className={`${styles.calendarDay} ${selectedDate === day.dateStr ? styles.calendarDayActive : ''}`}
+            onClick={() => setSelectedDate(day.dateStr)}
+          >
+            <span className={styles.calendarDayName}>{day.displayDay}</span>
+            <span className={styles.calendarDayNum}>{day.displayNum}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Stats */}
+      <div className={styles.stats}>
+        <div className={styles.statItem}>
+          <span className={styles.statValue}>{stats.pending}</span>
+          <span className={styles.statLabel}>Pending</span>
+        </div>
+        <div className={styles.statItem}>
+          <span className={styles.statValue}>{stats.completed}</span>
+          <span className={styles.statLabel}>Done</span>
+        </div>
+        <div className={styles.statItem}>
+          <span className={`${styles.statValue} ${stats.overdue > 0 ? styles.statDanger : ''}`}>
+            {stats.overdue}
+          </span>
+          <span className={styles.statLabel}>Overdue</span>
+        </div>
+      </div>
+
+      <div className={styles.sectionHeader} style={{ marginTop: '0' }}>
+        <h3 className={styles.sectionTitle}>
+          <CalendarIcon className={styles.sectionIcon} size={20} /> 
+          Tasks for {selectedDate === getToday() ? 'Today' : selectedDate}
+        </h3>
+      </div>
+
+      {/* Task List */}
+      <div className={styles.taskList} style={{ marginBottom: 'var(--space-4)', marginTop: 'var(--space-2)' }}>
+        <TaskList tasks={displayTasks} emptyMessage={`No tasks found for ${selectedDate === getToday() ? 'today' : selectedDate}`} />
+      </div>
+
+      {/* Add Button */}
+      {selectedDate >= getToday() && (
+        <button
+          className={styles.addBtn}
+          onClick={() => setShowForm(true)}
+          id="add-task-btn"
+        >
+          <Plus size={20} />
+          <span>Add Task</span>
+        </button>
+      )}
+
+      {/* Upcoming Tasks Section */}
+      {selectedDate === getToday() && upcomingTasks && upcomingTasks.length > 0 && (
+        <>
+          <div className={styles.sectionHeader}>
+            <h3 className={styles.sectionTitle}>
+              <Clock className={styles.sectionIcon} size={20} /> Upcoming Reminders
+            </h3>
+          </div>
+          <div className={styles.taskList} style={{ marginTop: 'var(--space-2)' }}>
+            <TaskList tasks={upcomingTasks} />
+          </div>
+        </>
+      )}
+
+      {/* Form Sheet */}
+      {showForm && (
+        <>
+          <div className="modal-backdrop" onClick={() => setShowForm(false)} />
+          <TaskForm onClose={() => setShowForm(false)} />
+        </>
+      )}
+    </div>
+  );
+}
