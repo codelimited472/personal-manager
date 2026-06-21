@@ -6,8 +6,11 @@ export async function updateSession(request: NextRequest) {
     request,
   });
 
+  let url = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+  if (url) url = url.replace(/\/rest\/v1\/?$/, '');
+
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    url,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {

@@ -1,7 +1,8 @@
 import { createBrowserClient } from '@supabase/ssr';
 
 export function createClient() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  let url = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+  if (url) url = url.replace(/\/rest\/v1\/?$/, '');
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!url || !anonKey) {
