@@ -2,7 +2,12 @@ import { createBrowserClient } from '@supabase/ssr';
 
 export function createClient() {
   let url = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-  if (url) url = url.replace(/\/rest\/v1\/?$/, '');
+  if (url) {
+    url = url.replace(/\/rest\/v1\/?$/, '');
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      url = 'https://' + url;
+    }
+  }
   const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!url || !anonKey) {
