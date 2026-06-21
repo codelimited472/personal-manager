@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { Archive, Plus, Trash2, Calendar, ShoppingCart, Check, Heart } from 'lucide-react';
-import { getDB, type LocalInventoryItem, type LocalExpiryItem, type LocalBuyItem } from '@/lib/db';
+import { getDB, type LocalInventoryItem, type LocalExpiryItem } from '@/lib/db';
 import styles from './inventory.module.css';
 
 export default function InventoryPage() {
   const db = getDB();
-  const [activeTab, setActiveTab] = useState<'inventory' | 'expiries' | 'buylist'>('inventory');
+  const [activeTab, setActiveTab] = useState<'inventory' | 'expiries'>('inventory');
 
   // Inventory Things
   const [items, setItems] = useState<LocalInventoryItem[]>([]);
@@ -23,11 +23,7 @@ export default function InventoryPage() {
   const [expDate, setExpDate] = useState('');
   const [expQty, setExpQty] = useState('1');
 
-  // Buy List
-  const [buyItems, setBuyItems] = useState<LocalBuyItem[]>([]);
-  const [buyName, setBuyName] = useState('');
-  const [buyType, setBuyType] = useState<'shopping' | 'wishlist'>('shopping');
-  const [buyPriority, setBuyPriority] = useState<'low' | 'medium' | 'high'>('medium');
+  // No Buy List here anymore
 
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -38,9 +34,6 @@ export default function InventoryPage() {
 
       const allExpiries = await db.expiryItems.toArray();
       setExpiries(allExpiries);
-
-      const allBuy = await db.buyItems.toArray();
-      setBuyItems(allBuy);
     }
     loadData();
   }, [refreshKey]);
@@ -111,37 +104,13 @@ export default function InventoryPage() {
     setRefreshKey(prev => prev + 1);
   };
 
-  // Buy List Actions
-  const addBuyItem = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!buyName) return;
-
-    await db.buyItems.add({
-      id: crypto.randomUUID(),
-      user_id: 'local-user',
-      name: buyName,
-      list_type: buyType,
-      priority: buyPriority,
-      purchased: false,
-      created_at: new Date().toISOString(),
-      _syncStatus: 'pending',
-    });
-
-    setBuyName('');
-    setRefreshKey(prev => prev + 1);
-  };
-
-  const togglePurchasedBuy = async (id: string, currentPurchased: boolean) => {
-    await db.buyItems.update(id, { purchased: !currentPurchased });
-    setRefreshKey(prev => prev + 1);
-  };
+  // (Buy List logic moved to /shopping)
 
   return (
     <div className="page">
       <div className={styles.tabBar}>
         <button onClick={() => setActiveTab('inventory')} className={activeTab === 'inventory' ? styles.tabActive : styles.tab}>Inventory</button>
         <button onClick={() => setActiveTab('expiries')} className={activeTab === 'expiries' ? styles.tabActive : styles.tab}>Expiries</button>
-        <button onClick={() => setActiveTab('buylist')} className={activeTab === 'buylist' ? styles.tabActive : styles.tab}>Buy List</button>
       </div>
 
       {activeTab === 'inventory' && (
@@ -274,67 +243,6 @@ export default function InventoryPage() {
                     <Trash2 size={16} />
                   </button>
                 </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {activeTab === 'buylist' && (
-        <div>
-          <form onSubmit={addBuyItem} className={styles.formCard}>
-            <h4 className={styles.formTitle}>Add to Buy List</h4>
-            <div className={styles.formGroup}>
-              <input
-                type="text"
-                placeholder="Item Name (e.g. Milk, Keyboard)"
-                value={buyName}
-                onChange={(e) => setBuyName(e.target.value)}
-                className={styles.input}
-                required
-              />
-            </div>
-            <div className={styles.formGroupRow}>
-              <select
-                value={buyType}
-                onChange={(e: any) => setBuyType(e.target.value)}
-                className={styles.input}
-              >
-                <option value="shopping">Shopping List (Needs)</option>
-                <option value="wishlist">Wishlist (Wants)</option>
-              </select>
-              <select
-                value={buyPriority}
-                onChange={(e: any) => setBuyPriority(e.target.value)}
-                className={styles.input}
-              >
-                <option value="low">Low Priority</option>
-                <option value="medium">Medium Priority</option>
-                <option value="high">High Priority</option>
-              </select>
-            </div>
-            <button type="submit" className={styles.submitBtn}>
-              <ShoppingCart size={16} /> Save Item
-            </button>
-          </form>
-
-          {/* List */}
-          <h3 className={styles.sectionHeader}>Buy Lists</h3>
-          <div className={styles.buyList}>
-            {buyItems.map(item => (
-              <div
-                key={item.id}
-                onClick={() => togglePurchasedBuy(item.id, item.purchased)}
-                className={item.purchased ? styles.purchasedCard : styles.buyCard}
-              >
-                <div className={styles.checkbox}>
-                  {item.purchased && <Check size={16} color="white" />}
-                </div>
-                <div className={styles.buyDetails}>
-                  <strong className={item.purchased ? styles.purchasedText : styles.buyNameText}>{item.name}</strong>
-                  <span className={styles.buySub}>List: {item.list_type} • Priority: {item.priority}</span>
-                </div>
-                {item.list_type === 'wishlist' && <Heart size={14} color="var(--accent-danger)" fill="var(--accent-danger)" />}
               </div>
             ))}
           </div>

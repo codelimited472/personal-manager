@@ -200,7 +200,9 @@ export interface LocalBuyItem extends SyncFields {
   id: string;
   user_id: string;
   name: string;
-  list_type: 'shopping' | 'wishlist';
+  list_type: string;
+  quantity?: string;
+  price?: number;
   priority: 'low' | 'medium' | 'high';
   purchased: boolean;
   created_at: string;
