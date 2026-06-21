@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Car, FileText, AlertTriangle, Plus, Trash2, Edit2, CheckCircle2 } from 'lucide-react';
 import { getDB, type LocalVehicle, type LocalVehicleIssue } from '@/lib/db';
+import { deleteRecord } from '@/lib/sync';
 import styles from './vehicles.module.css';
 
 export default function VehiclesPage() {
@@ -102,7 +103,7 @@ export default function VehiclesPage() {
   };
 
   const deleteVehicle = async (id: string) => {
-    await db.vehicles.delete(id);
+    await deleteRecord('vehicles', id);
     setRefreshKey(prev => prev + 1);
   };
 
