@@ -2,29 +2,30 @@
 
 import { useState } from 'react';
 import { useAuth } from '@/features/auth/hooks/useAuth';
-import { createTask } from '../services/taskService';
+import { createTask, updateTask } from '../services/taskService';
 import { TASK_PRIORITIES, TASK_CATEGORIES } from '../constants';
 import { useToast } from '@/components/ui/Toast';
-import type { TaskFormData, TaskPriority, TaskCategory } from '../types';
+import type { Task, TaskFormData, TaskPriority, TaskCategory } from '../types';
 import { X } from 'lucide-react';
 import styles from './TaskForm.module.css';
 
 interface TaskFormProps {
   onClose: () => void;
   onCreated?: () => void;
+  initialData?: Task;
 }
 
-export default function TaskForm({ onClose, onCreated }: TaskFormProps) {
+export default function TaskForm({ onClose, onCreated, initialData }: TaskFormProps) {
   const { user } = useAuth();
   const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState<TaskFormData>({
-    title: '',
-    description: '',
-    due_date: '',
-    priority: 'medium',
-    category: 'personal',
-    is_recurring: false,
+    title: initialData?.title || '',
+    description: initialData?.description || '',
+    due_date: initialData?.due_date || '',
+    priority: initialData?.priority || 'medium',
+    category: initialData?.category || 'personal',
+    is_recurring: initialData?.is_recurring || false,
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -34,17 +35,26 @@ export default function TaskForm({ onClose, onCreated }: TaskFormProps) {
     setLoading(true);
     try {
       const userId = user?.id || 'local-user';
-      await createTask(userId, {
-        ...form,
-        title: form.title.trim(),
-        due_date: form.due_date || undefined,
-      });
-      showToast('Task created!', 'success');
+      if (initialData) {
+        await updateTask(initialData.id, {
+          ...form,
+          title: form.title.trim(),
+          due_date: form.due_date || undefined,
+        });
+        showToast('Task updated!', 'success');
+      } else {
+        await createTask(userId, {
+          ...form,
+          title: form.title.trim(),
+          due_date: form.due_date || undefined,
+        });
+        showToast('Task created!', 'success');
+      }
       onCreated?.();
       onClose();
     } catch (err) {
       console.error(err);
-      showToast('Failed to create task', 'error');
+      showToast(initialData ? 'Failed to update task' : 'Failed to create task', 'error');
     } finally {
       setLoading(false);
     }
@@ -55,7 +65,7 @@ export default function TaskForm({ onClose, onCreated }: TaskFormProps) {
       <div className="bottom-sheet-handle" />
       <div className="bottom-sheet-content">
         <div className={styles.formHeader}>
-          <h2 className={styles.formTitle}>New Task</h2>
+          <h2 className={styles.formTitle}>{initialData ? 'Edit Task' : 'New Task'}</h2>
           <button className="btn-icon btn-ghost" onClick={onClose} aria-label="Close">
             <X size={20} />
           </button>
@@ -141,7 +151,7 @@ export default function TaskForm({ onClose, onCreated }: TaskFormProps) {
             disabled={loading || !form.title.trim()}
             id="task-submit-btn"
           >
-            {loading ? 'Creating...' : 'Create Task'}
+            {loading ? (initialData ? 'Updating...' : 'Creating...') : (initialData ? 'Update Task' : 'Create Task')}
           </button>
         </form>
       </div>

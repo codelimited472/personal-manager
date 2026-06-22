@@ -5,6 +5,7 @@ import { Wallet, Users, Car, Plus, Trash2, CheckCircle2, TrendingUp, Landmark } 
 import { getDB, type LocalExpense, type LocalEmployeeProfile, type LocalEmployeeExpense, type LocalPetrolExpense, type LocalVehicle } from '@/lib/db';
 import { getToday } from '@/lib/utils';
 import QuickExpenseLog from '@/components/QuickExpenseLog';
+import { deleteRecord } from '@/lib/sync';
 import styles from './expenses.module.css';
 import pageStyles from '@/app/page.module.css';
 
@@ -50,7 +51,8 @@ export default function ExpensesPage() {
   useEffect(() => {
     async function loadData() {
       // 1. Personal
-      const list = await db.expenses.orderBy('date').reverse().toArray();
+      const list = await db.expenses.toArray();
+      list.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
       setExpenses(list);
 
       // 2. Employee
@@ -102,7 +104,38 @@ export default function ExpensesPage() {
   }, [refreshKey]);
 
   const deleteExpense = async (id: string) => {
-    await db.expenses.delete(id);
+    // Check personal expenses
+    const expense = await db.expenses.get(id);
+    if (expense) {
+      if (expense.category.toLowerCase() === 'petrol') {
+        const matchingPetrol = await db.petrolExpenses
+          .where('date').equals(expense.date)
+          .filter(p => p.amount === expense.amount)
+          .first();
+        if (matchingPetrol) {
+          await deleteRecord('petrolExpenses', matchingPetrol.id);
+        }
+      }
+      await deleteRecord('expenses', id);
+    }
+    
+    // Check petrol expenses
+    const pExp = await db.petrolExpenses.get(id);
+    if (pExp) {
+       const matchingExpense = await db.expenses
+         .where('date').equals(pExp.date)
+         .filter(e => e.amount === pExp.amount && e.category.toLowerCase() === 'petrol')
+         .first();
+       if (matchingExpense) {
+         await deleteRecord('expenses', matchingExpense.id);
+       }
+       await deleteRecord('petrolExpenses', id);
+    }
+
+    // Direct delete fallback (e.g. for unified IDs)
+    await deleteRecord('expenses', id);
+    await deleteRecord('petrolExpenses', id);
+    
     setRefreshKey(prev => prev + 1);
   };
 
@@ -202,8 +235,10 @@ export default function ExpensesPage() {
       }
     }
 
+    const sharedId = crypto.randomUUID();
+
     await db.petrolExpenses.add({
-      id: crypto.randomUUID(),
+      id: sharedId,
       user_id: 'local-user',
       vehicle_id: selectedVehicleId,
       amount: finalAmt,
@@ -218,7 +253,7 @@ export default function ExpensesPage() {
 
     // Also store it in the main expenses log
     await db.expenses.add({
-      id: crypto.randomUUID(),
+      id: sharedId,
       user_id: 'local-user',
       amount: finalAmt,
       category: 'Petrol',
@@ -316,7 +351,9 @@ export default function ExpensesPage() {
                 <div key={exp.id} className={styles.logItem}>
                   <div>
                     <strong className={styles.logCategory}>{exp.category}</strong>
-                    <span className={styles.logSub}>{exp.date} {exp.description && `• ${exp.description}`}</span>
+                    <span className={styles.logSub}>
+                      {exp.date} {exp.created_at && `at ${new Date(exp.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}`} {exp.description && `• ${exp.description}`}
+                    </span>
                   </div>
                   <div className={styles.logRight}>
                     <span className={styles.logAmount}>₹{exp.amount}</span>
@@ -534,6 +571,9 @@ export default function ExpensesPage() {
                             {log.mileage.toFixed(1)} km/L
                           </span>
                         )}
+                        <button onClick={() => deleteExpense(log.id)} className={styles.deleteBtn}>
+                          <Trash2 size={16} />
+                        </button>
                       </div>
                     </div>
                   ))

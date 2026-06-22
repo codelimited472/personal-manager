@@ -17,6 +17,19 @@
 
 .itemCompleted {
   opacity: 0.6;
+  background: transparent;
+}
+
+.itemCarried {
+  opacity: 0.7;
+  background: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 10px,
+    var(--bg-card) 10px,
+    var(--bg-card) 20px
+  );
+  border-style: dashed;
 }
 
 /* Checkbox */
@@ -41,9 +54,18 @@
 }
 
 .checkboxChecked {
-  background: var(--accent-success);
-  border-color: var(--accent-success);
-  animation: popIn 0.3s ease-out;
+  background: var(--accent-primary);
+  border-color: var(--accent-primary);
+}
+
+.checkboxCarried {
+  background: transparent;
+  border-color: var(--text-tertiary);
+  cursor: not-allowed;
+}
+
+.iconCarried {
+  color: var(--text-tertiary);
 }
 
 /* Content */
@@ -63,6 +85,10 @@
 .titleCompleted {
   text-decoration: line-through;
   color: var(--text-tertiary);
+}
+
+.titleCarried {
+  color: var(--text-secondary);
 }
 
 .meta {
@@ -87,21 +113,36 @@
 }
 
 /* Delete */
-.deleteBtn {
+.actions {
+  display: flex;
+  gap: var(--space-2);
+  margin-left: var(--space-2);
+}
+
+.actionBtn {
+  background: none;
+  border: none;
+  padding: var(--space-2);
   color: var(--text-tertiary);
-  padding: var(--space-1);
+  cursor: pointer;
   border-radius: var(--radius-md);
-  transition: all var(--transition-fast);
-  flex-shrink: 0;
-  opacity: 0.5;
-  -webkit-tap-highlight-color: transparent;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.deleteBtn:hover {
+.actionBtn:hover {
+  background: var(--bg-hover);
   color: var(--accent-danger);
+}
+
+.item:hover .actionBtn {
   opacity: 1;
 }
 
-.item:hover .deleteBtn {
-  opacity: 1;
+@media (max-width: 768px) {
+  .actionBtn {
+    opacity: 1;
+  }
 }

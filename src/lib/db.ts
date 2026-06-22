@@ -373,6 +373,7 @@ export interface LocalNotification extends SyncFields {
   due_date?: string;
   read: boolean;
   dismissed: boolean;
+  dismissed_date?: string;
   created_at: string;
 }
 

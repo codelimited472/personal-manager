@@ -4,7 +4,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { getDB } from '@/lib/db';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import type { Task, TaskStatus } from '../types';
-import { getToday } from '@/lib/utils';
+import { getToday, isSameDayLocal } from '@/lib/utils';
 
 export function useTasks(filter?: {
   status?: TaskStatus;
@@ -32,16 +32,38 @@ export function useTasks(filter?: {
         const queryDate = filter.date;
         const today = getToday();
         
-        if (queryDate < today) {
+        if (queryDate <= today) {
           results = results.filter(t => {
-            const completedOnDate = t.status === 'completed' && t.completed_at?.startsWith(queryDate);
+            const completedOnDate = t.status === 'completed' && isSameDayLocal(t.completed_at, queryDate);
             const dueOnDate = t.due_date?.startsWith(queryDate);
             const createdOnOrBefore = t.created_at.split('T')[0] <= queryDate;
             const wasPending = createdOnOrBefore && (t.status !== 'completed' || (t.completed_at && t.completed_at > queryDate));
             return completedOnDate || dueOnDate || wasPending;
+          }).map(t => {
+            const isCompletedLater = t.status === 'completed' && t.completed_at && t.completed_at > queryDate && !isSameDayLocal(t.completed_at, queryDate);
+            if (isCompletedLater || t.status === 'pending') {
+              // If it's a past date (or today but not completed today), we know it wasn't completed ON that date.
+              // If queryDate < today, it's definitely carried forward to next day.
+              if (queryDate < today) {
+                return { ...t, status: 'carried_forward' as any };
+              }
+              return { ...t, status: 'pending' };
+            }
+            return t;
           });
         } else {
-          results = results.filter(t => t.due_date?.startsWith(queryDate));
+          // Future date: show tasks due on that date OR pending tasks that will be carried forward
+          results = results.filter(t => {
+            const dueOnDate = t.due_date?.startsWith(queryDate);
+            const createdBeforeFuture = t.created_at.split('T')[0] <= queryDate;
+            const isStillPending = t.status !== 'completed' || (t.completed_at && t.completed_at > queryDate);
+            return dueOnDate || (createdBeforeFuture && isStillPending);
+          }).map(t => {
+            if (t.status === 'completed' && t.completed_at && t.completed_at > queryDate) {
+              return { ...t, status: 'pending' };
+            }
+            return t;
+          });
         }
       }
 
@@ -86,7 +108,7 @@ export function useTasks(filter?: {
         .filter(t =>
           Boolean(
             (t.status === 'pending' && (!t.due_date || t.due_date <= today)) ||
-            (t.status === 'completed' && (t.due_date?.startsWith(today) || t.completed_at?.startsWith(today)))
+            (t.status === 'completed' && isSameDayLocal(t.completed_at, today))
           )
         )
         .toArray();
@@ -100,18 +122,50 @@ export function useTasks(filter?: {
       if (!userId) return { total: 0, completed: 0, pending: 0, overdue: 0 };
       const db = getDB();
       const all = await db.tasks.where('user_id').equals(userId).toArray();
+      const queryDate = filter?.date || getToday();
       const today = getToday();
 
-      return {
-        total: all.length,
-        completed: all.filter(t => t.status === 'completed').length,
-        pending: all.filter(t => t.status === 'pending' || t.status === 'in_progress').length,
-        overdue: all.filter(t =>
-          t.status === 'pending' &&
-          t.due_date &&
-          t.due_date < today
-        ).length,
-      };
+      if (queryDate === today) {
+        const pendingOnToday = all.filter(t => {
+          const createdBefore = t.created_at.split('T')[0] <= today;
+          return createdBefore && (t.status === 'pending' || t.status === 'in_progress');
+        });
+        const completedToday = all.filter(t => t.status === 'completed' && isSameDayLocal(t.completed_at, today));
+        return {
+          total: pendingOnToday.length + completedToday.length,
+          completed: completedToday.length,
+          pending: pendingOnToday.length,
+          overdue: all.filter(t => t.status === 'pending' && t.due_date && t.due_date < today).length,
+        };
+      } else if (queryDate < today) {
+        const pendingOnDate = all.filter(t => {
+          const createdBefore = t.created_at.split('T')[0] <= queryDate;
+          const notCompletedByThen = t.status !== 'completed' || (t.completed_at && t.completed_at > queryDate);
+          return createdBefore && notCompletedByThen;
+        });
+        const completedOnDate = all.filter(t => t.status === 'completed' && isSameDayLocal(t.completed_at, queryDate));
+        return {
+          total: pendingOnDate.length + completedOnDate.length,
+          completed: completedOnDate.length,
+          pending: pendingOnDate.length,
+          overdue: pendingOnDate.filter(t => t.due_date && t.due_date < queryDate).length,
+        };
+      } else {
+        // Future dates
+        const pendingOnDate = all.filter(t => {
+          const createdBefore = t.created_at.split('T')[0] <= queryDate;
+          const notCompletedByThen = t.status !== 'completed' || (t.completed_at && t.completed_at > queryDate);
+          return createdBefore && notCompletedByThen;
+        });
+        const completedOnDate = all.filter(t => t.status === 'completed' && isSameDayLocal(t.completed_at, queryDate));
+        
+        return {
+          total: pendingOnDate.length + completedOnDate.length,
+          completed: completedOnDate.length,
+          pending: pendingOnDate.length,
+          overdue: 0,
+        };
+      }
     },
     [userId],
     { total: 0, completed: 0, pending: 0, overdue: 0 }

@@ -12,6 +12,7 @@ import styles from './tasks.module.css';
 function TasksContent() {
   const searchParams = useSearchParams();
   const [showForm, setShowForm] = useState(false);
+  const [editingTask, setEditingTask] = useState<any>(null);
   const [selectedDate, setSelectedDate] = useState<string>(getToday());
   const [dateStrip, setDateStrip] = useState<{ dateStr: string; displayDay: string; displayNum: string }[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -45,8 +46,19 @@ function TasksContent() {
   useEffect(() => {
     if (searchParams.get('add') === 'true') {
       setShowForm(true);
+      setEditingTask(null);
     }
   }, [searchParams]);
+
+  const handleOpenForm = (task?: any) => {
+    setEditingTask(task || null);
+    setShowForm(true);
+  };
+
+  const handleCloseForm = () => {
+    setEditingTask(null);
+    setShowForm(false);
+  };
 
   const displayTasks = selectedDate === getToday() ? todayTasks : tasks;
 
@@ -91,22 +103,27 @@ function TasksContent() {
         </h3>
       </div>
 
-      {/* Task List */}
-      <div className={styles.taskList} style={{ marginBottom: 'var(--space-4)', marginTop: 'var(--space-2)' }}>
-        <TaskList tasks={displayTasks} emptyMessage={`No tasks found for ${selectedDate === getToday() ? 'today' : selectedDate}`} />
-      </div>
-
       {/* Add Button */}
       {selectedDate >= getToday() && (
         <button
           className={styles.addBtn}
-          onClick={() => setShowForm(true)}
+          onClick={() => handleOpenForm()}
           id="add-task-btn"
+          style={{ marginBottom: 'var(--space-4)' }}
         >
           <Plus size={20} />
           <span>Add Task</span>
         </button>
       )}
+
+      {/* Task List */}
+      <div className={styles.taskList} style={{ marginBottom: 'var(--space-4)', marginTop: 'var(--space-2)' }}>
+        <TaskList 
+          tasks={displayTasks} 
+          emptyMessage={`No tasks found for ${selectedDate === getToday() ? 'today' : selectedDate}`} 
+          onEditTask={handleOpenForm}
+        />
+      </div>
 
       {/* Upcoming Tasks Section */}
       {selectedDate === getToday() && upcomingTasks && upcomingTasks.length > 0 && (
@@ -117,7 +134,7 @@ function TasksContent() {
             </h3>
           </div>
           <div className={styles.taskList} style={{ marginTop: 'var(--space-2)' }}>
-            <TaskList tasks={upcomingTasks} />
+            <TaskList tasks={upcomingTasks} onEditTask={handleOpenForm} />
           </div>
         </>
       )}
@@ -125,8 +142,8 @@ function TasksContent() {
       {/* Form Sheet */}
       {showForm && (
         <>
-          <div className="modal-backdrop" onClick={() => setShowForm(false)} />
-          <TaskForm onClose={() => setShowForm(false)} />
+          <div className="modal-backdrop" onClick={handleCloseForm} />
+          <TaskForm onClose={handleCloseForm} initialData={editingTask} />
         </>
       )}
     </div>

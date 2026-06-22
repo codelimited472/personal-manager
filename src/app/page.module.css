@@ -376,6 +376,11 @@
   -webkit-backdrop-filter: blur(12px);
 }
 
+.scrollableListCard {
+  max-height: 360px; /* Approximately 5 items high */
+  overflow-y: auto;
+}
+
 .listItem {
   display: flex;
   align-items: center;
@@ -477,6 +482,27 @@
   border-radius: var(--radius-xl);
   color: var(--text-primary);
   box-shadow: var(--shadow-sm);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.closeAlertBtn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: var(--space-1);
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+}
+
+.closeAlertBtn:hover {
+  background: var(--bg-glass-hover);
+  color: var(--text-primary);
 }
 
 .alertContent strong {
@@ -513,9 +539,6 @@
   width: 64px;
   height: 64px;
   border-radius: var(--radius-full);
-  border: 5px solid var(--bg-surface);
-  border-top-color: var(--accent-secondary);
-  border-right-color: var(--accent-secondary);
   display: flex;
   align-items: center;
   justify-content: center;

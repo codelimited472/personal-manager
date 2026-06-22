@@ -34,6 +34,16 @@ export function getToday(): string {
   return format(new Date(), 'yyyy-MM-dd');
 }
 
+export function isSameDayLocal(isoString?: string, localDateStr?: string): boolean {
+  if (!isoString || !localDateStr) return false;
+  if (isoString.includes('T')) {
+    const d = new Date(isoString);
+    const localStr = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    return localStr === localDateStr;
+  }
+  return isoString.startsWith(localDateStr);
+}
+
 export function getTodayISO(): string {
   return new Date().toISOString();
 }

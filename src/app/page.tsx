@@ -3,16 +3,17 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  CheckSquare, Square, Compass, CheckCircle2, Droplet, Calendar, AlertTriangle, Wallet, Lightbulb, Car, Briefcase, Plus, RefreshCw
+  CheckSquare, Square, Compass, CheckCircle2, Droplet, Calendar, AlertTriangle, Wallet, Lightbulb, Car, Briefcase, Plus, RefreshCw, X
 } from 'lucide-react';
 import { getDB, type LocalTask, type LocalHabit, type LocalHabitLog, type LocalWaterLog, type LocalExpense, type LocalNotification } from '@/lib/db';
-import { getToday } from '@/lib/utils';
+import { getToday, isSameDayLocal } from '@/lib/utils';
 import QuickExpenseLog from '@/components/QuickExpenseLog';
 import styles from './page.module.css';
 
 export default function Home() {
   const router = useRouter();
   const [tasks, setTasks] = useState<LocalTask[]>([]);
+  const [pendingTasksCount, setPendingTasksCount] = useState(0);
   const [habits, setHabits] = useState<(LocalHabit & { completedToday?: boolean })[]>([]);
   const [waterAmount, setWaterAmount] = useState(0);
   const [expenses, setExpenses] = useState<LocalExpense[]>([]);
@@ -28,11 +29,21 @@ export default function Home() {
         const db = getDB();
         const todayStr = getToday();
 
-        // 1. Fetch uncompleted today's tasks
-        const todayTasks = await db.tasks
-          .filter(t => !t.due_date || t.due_date <= todayStr)
-          .toArray();
-        setTasks(todayTasks.filter(t => t.status !== 'completed').slice(0, 5));
+        // 1. Fetch uncompleted today's tasks + tasks completed today
+        const allTasks = await db.tasks.toArray();
+        setPendingTasksCount(allTasks.filter(t => t.status !== 'completed').length);
+
+        const todayTasks = allTasks.filter(t => 
+          (t.status !== 'completed' && (!t.due_date || t.due_date <= todayStr)) ||
+          (t.status === 'completed' && isSameDayLocal(t.completed_at, todayStr))
+        );
+        
+        todayTasks.sort((a, b) => {
+          if (a.status === 'completed' && b.status !== 'completed') return 1;
+          if (b.status === 'completed' && a.status !== 'completed') return -1;
+          return 0;
+        });
+        setTasks(todayTasks);
 
         // 2. Fetch habits & today's logs
         const allHabits = await db.habits.toArray();
@@ -64,7 +75,7 @@ export default function Home() {
 
         // 6. Fetch upcoming alerts/notifications
         const alerts = await db.notifications
-          .filter(n => !n.read)
+          .filter(n => !n.read && n.dismissed_date !== todayStr)
           .toArray();
         setNotifications(alerts.slice(0, 3));
 
@@ -84,6 +95,16 @@ export default function Home() {
       completed_at: newStatus === 'completed' ? new Date().toISOString() : undefined,
       updated_at: new Date().toISOString(),
       _syncStatus: 'pending',
+    });
+    setRefreshKey(prev => prev + 1);
+  };
+
+  const dismissNotification = async (id: string) => {
+    const db = getDB();
+    const todayStr = getToday();
+    await db.notifications.update(id, { 
+      dismissed_date: todayStr,
+      _syncStatus: 'pending'
     });
     setRefreshKey(prev => prev + 1);
   };
@@ -145,6 +166,9 @@ export default function Home() {
                   <strong>{alert.title}</strong>
                   {alert.body && <p>{alert.body}</p>}
                 </div>
+                <button className={styles.closeAlertBtn} onClick={() => dismissNotification(alert.id)}>
+                  <X size={16} />
+                </button>
               </div>
             ))}
           </div>
@@ -161,7 +185,7 @@ export default function Home() {
             <Plus size={16} /> Add Task
           </button>
         </div>
-        <div className={styles.listCard}>
+        <div className={`${styles.listCard} ${styles.scrollableListCard}`}>
           {tasks.length === 0 ? (
             <div className={styles.emptyState}>No pending tasks today! 🎉</div>
           ) : (
@@ -213,7 +237,7 @@ export default function Home() {
         </div>
         <div className={styles.statCard}>
           <CheckSquare className={styles.statIconTasks} />
-          <div className={styles.statValue}>{tasks.length}</div>
+          <div className={styles.statValue}>{pendingTasksCount}</div>
           <div className={styles.statLabel}>Pending Tasks</div>
         </div>
       </div>
@@ -263,7 +287,12 @@ export default function Home() {
         </h3>
         <div className={styles.waterPanel}>
           <div className={styles.waterDetails}>
-            <div className={styles.waterProgressRing}>
+            <div 
+              className={styles.waterProgressRing}
+              style={{
+                background: `radial-gradient(closest-side, var(--bg-surface) 79%, transparent 80% 100%), conic-gradient(var(--accent-secondary) ${waterPercentage}%, var(--border-secondary) 0)`
+              }}
+            >
               <span className={styles.waterPercentText}>{waterPercentage}%</span>
             </div>
             <div>
@@ -274,7 +303,7 @@ export default function Home() {
           <div className={styles.waterQuickGrid}>
             <button onClick={() => logWater(250)} className={styles.waterQuickBtn}>+250ml</button>
             <button onClick={() => logWater(500)} className={styles.waterQuickBtn}>+500ml</button>
-            <button onClick={() => logWater(750)} className={styles.waterQuickBtn}>+750ml</button>
+            <button onClick={() => logWater(700)} className={styles.waterQuickBtn}>+700ml</button>
             <button onClick={() => logWater(1000)} className={styles.waterQuickBtn}>+1L</button>
           </div>
         </div>
