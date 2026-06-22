@@ -175,6 +175,9 @@ export async function syncTable(tableName: SyncableTable, userId: string): Promi
  * Sync all tables
  */
 export async function syncAll(userId: string): Promise<void> {
+  // First process any pending deletions
+  await processDeletionQueue();
+
   // Sync core/parent tables first to satisfy foreign key constraints
   const tier1: SyncableTable[] = [
     'settings', 'tasks', 'habits', 'waterLogs', 'expenses', 'captures',
@@ -217,6 +220,44 @@ export async function getPendingCount(): Promise<number> {
 }
 
 /**
+ * Process the deletion queue from localStorage
+ */
+export async function processDeletionQueue(): Promise<void> {
+  if (typeof window === 'undefined') return;
+  const queueJson = localStorage.getItem('sync_deletion_queue');
+  if (!queueJson) return;
+
+  try {
+    const queue: { table: SyncableTable; id: string }[] = JSON.parse(queueJson);
+    const supabase = createClient();
+    const remainingQueue = [];
+
+    for (const item of queue) {
+      const supabaseTable = tableMap[item.table];
+      const idField = item.table === 'settings' ? 'key' : 'id';
+      
+      try {
+        const { error } = await supabase.from(supabaseTable).delete().eq(idField, item.id);
+        if (error) {
+          console.error(`[Sync] Failed to process queued deletion for ${item.table}:`, error.message);
+          remainingQueue.push(item);
+        }
+      } catch (err) {
+        remainingQueue.push(item);
+      }
+    }
+
+    if (remainingQueue.length === 0) {
+      localStorage.removeItem('sync_deletion_queue');
+    } else {
+      localStorage.setItem('sync_deletion_queue', JSON.stringify(remainingQueue));
+    }
+  } catch (err) {
+    console.error('Error processing deletion queue:', err);
+  }
+}
+
+/**
  * Delete a record locally and from Supabase
  */
 export async function deleteRecord(
@@ -228,11 +269,30 @@ export async function deleteRecord(
   const supabaseTable = tableMap[tableName];
   const idField = tableName === 'settings' ? 'key' : 'id';
 
+  let deleteSucceeded = false;
+
   // Delete from Supabase
   try {
-    await supabase.from(supabaseTable).delete().eq(idField, id);
+    const { error } = await supabase.from(supabaseTable).delete().eq(idField, id);
+    if (!error) {
+      deleteSucceeded = true;
+    } else {
+      console.warn(`[Sync] API error deleting from Supabase ${tableName}:`, error.message);
+    }
   } catch (err) {
-    console.error(`Failed to delete from Supabase:`, err);
+    console.warn(`[Sync] Network/unknown error deleting from Supabase ${tableName}:`, err);
+  }
+
+  // If failed (offline or API error), queue it for later
+  if (!deleteSucceeded && typeof window !== 'undefined') {
+    try {
+      const queueJson = localStorage.getItem('sync_deletion_queue');
+      const queue = queueJson ? JSON.parse(queueJson) : [];
+      queue.push({ table: tableName, id });
+      localStorage.setItem('sync_deletion_queue', JSON.stringify(queue));
+    } catch (e) {
+      console.error('Failed to queue deletion:', e);
+    }
   }
 
   // Delete locally
