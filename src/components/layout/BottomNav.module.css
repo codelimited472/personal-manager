@@ -9,8 +9,8 @@
   align-items: stretch;
   justify-content: space-around;
   height: 4.5rem;
-  background: var(--bg-glass);
-  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: var(--nav-bg);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: var(--radius-full);
   box-shadow: var(--shadow-lg), 0 0 0 1px var(--border-secondary);
   z-index: var(--z-fixed);

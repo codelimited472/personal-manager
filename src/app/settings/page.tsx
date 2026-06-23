@@ -1,11 +1,13 @@
 'use client';
 
 import { useAuth } from '@/features/auth/hooks/useAuth';
-import { LogOut, User as UserIcon, Mail, Shield } from 'lucide-react';
+import { useTheme } from '@/hooks/useTheme';
+import { LogOut, User as UserIcon, Mail, Shield, Moon, Sun } from 'lucide-react';
 import styles from './settings.module.css';
 
 export default function SettingsPage() {
   const { user, loading, signOut } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
   if (loading) {
     return <div className="page" style={{ padding: 'var(--space-4)' }}>Loading...</div>;
@@ -58,6 +60,37 @@ export default function SettingsPage() {
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>Account Status</span>
               <span style={{ color: 'var(--accent-success)' }}>Active</span>
+            </div>
+          </div>
+        </div>
+
+        <div className={styles.section}>
+          <h3 className={styles.sectionTitle}>App Preferences</h3>
+          
+          <div className={styles.actionButton} onClick={toggleTheme}>
+            {theme === 'dark' ? <Moon size={18} color="var(--text-secondary)" /> : <Sun size={18} color="var(--text-secondary)" />}
+            <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+              <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>Appearance</span>
+              <span>{theme === 'dark' ? 'Dark Theme' : 'Light Theme'}</span>
+            </div>
+            <div style={{
+              width: '40px',
+              height: '22px',
+              borderRadius: '11px',
+              background: theme === 'dark' ? 'var(--accent-primary)' : 'var(--border-secondary)',
+              position: 'relative',
+              transition: 'background 0.3s ease'
+            }}>
+              <div style={{
+                width: '18px',
+                height: '18px',
+                borderRadius: '50%',
+                background: 'white',
+                position: 'absolute',
+                top: '2px',
+                left: theme === 'dark' ? '20px' : '2px',
+                transition: 'left 0.3s ease'
+              }} />
             </div>
           </div>
         </div>

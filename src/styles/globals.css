@@ -111,9 +111,10 @@
   --bg-tertiary: #151525;
   --bg-elevated: #1a1a2e;
   --bg-surface: #1e1e35;
-  --bg-glass: rgba(255, 255, 255, 0.04);
-  --bg-glass-hover: rgba(255, 255, 255, 0.08);
-  --bg-glass-active: rgba(255, 255, 255, 0.12);
+  --bg-glass: rgba(255, 255, 255, 0.08);
+  --bg-glass-hover: rgba(255, 255, 255, 0.12);
+  --bg-glass-active: rgba(255, 255, 255, 0.16);
+  --nav-bg: rgba(14, 14, 24, 0.85);
 
   /* Accent Colors */
   --accent-primary: #7c6cf0;
@@ -175,6 +176,7 @@
   --bg-glass: rgba(255, 255, 255, 0.7);
   --bg-glass-hover: rgba(255, 255, 255, 0.85);
   --bg-glass-active: rgba(255, 255, 255, 0.95);
+  --nav-bg: rgba(255, 255, 255, 0.85);
 
   --accent-primary: #5a4fcf;   /* Rich vibrant violet */
   --accent-primary-hover: #4b41b5;
