@@ -104,6 +104,7 @@ export default function ExpensesPage() {
   }, [refreshKey]);
 
   const deleteExpense = async (id: string) => {
+    if (!(await window.appConfirm('Are you sure you want to delete this item?'))) return;
     // Check personal expenses
     const expense = await db.expenses.get(id);
     if (expense) {
@@ -347,20 +348,35 @@ export default function ExpensesPage() {
             {expenses.length === 0 ? (
               <p className={styles.emptyState}>No expenses logged yet.</p>
             ) : (
-              expenses.map(exp => (
-                <div key={exp.id} className={styles.logItem}>
-                  <div>
-                    <strong className={styles.logCategory}>{exp.category}</strong>
-                    <span className={styles.logSub}>
-                      {exp.date} {exp.created_at && `at ${new Date(exp.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}`} {exp.description && `• ${exp.description}`}
-                    </span>
-                  </div>
-                  <div className={styles.logRight}>
-                    <span className={styles.logAmount}>₹{exp.amount}</span>
-                    <button onClick={() => deleteExpense(exp.id)} className={styles.deleteBtn}>
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
+              Object.entries(
+                expenses.reduce((acc, exp) => {
+                  if (!acc[exp.date]) acc[exp.date] = [];
+                  acc[exp.date].push(exp);
+                  return acc;
+                }, {} as Record<string, typeof expenses>)
+              )
+              .sort(([dateA], [dateB]) => new Date(dateB).getTime() - new Date(dateA).getTime())
+              .map(([date, dateExpenses]) => (
+                <div key={date}>
+                  <h4 style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '1.25rem 0 0.5rem 0', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    {date === getToday() ? 'Today' : new Date(date).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}
+                  </h4>
+                  {dateExpenses.map(exp => (
+                    <div key={exp.id} className={styles.logItem}>
+                      <div>
+                        <strong className={styles.logCategory}>{exp.category}</strong>
+                        <span className={styles.logSub}>
+                          {exp.created_at && `${new Date(exp.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}`} {exp.description && `• ${exp.description}`}
+                        </span>
+                      </div>
+                      <div className={styles.logRight}>
+                        <span className={styles.logAmount}>₹{exp.amount}</span>
+                        <button onClick={() => deleteExpense(exp.id)} className={styles.deleteBtn}>
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               ))
             )}

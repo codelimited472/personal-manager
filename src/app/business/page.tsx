@@ -75,6 +75,7 @@ export default function BusinessPage() {
   };
 
   const deleteWorkspace = async (id: string) => {
+    if (!(await window.appConfirm('Are you sure you want to delete this item?'))) return;
     await db.businessWorkspaces.delete(id);
     if (activeWorkspaceId === id) setActiveWorkspaceId('');
     setRefreshKey(prev => prev + 1);

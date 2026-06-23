@@ -26,8 +26,10 @@ export default function DocumentsPage() {
     e.preventDefault();
     if (!name) return;
 
+    const docId = crypto.randomUUID();
+
     await db.documents.add({
-      id: crypto.randomUUID(),
+      id: docId,
       user_id: 'local-user',
       name,
       category,
@@ -45,6 +47,8 @@ export default function DocumentsPage() {
         title: `Document expiring soon: ${name}`,
         body: `Category: ${category}. Expiry date: ${expiryDate}`,
         type: 'document_expiry',
+        entity_id: docId,
+        entity_type: 'document',
         due_date: expiryDate,
         read: false,
         dismissed: false,
@@ -60,6 +64,16 @@ export default function DocumentsPage() {
   };
 
   const deleteDocument = async (id: string) => {
+    if (!(await window.appConfirm('Are you sure you want to delete this item?'))) return;
+    // Delete associated notifications first
+    const notificationsToDelete = await db.notifications
+      .filter(n => n.entity_id === id && n.entity_type === 'document')
+      .toArray();
+      
+    for (const n of notificationsToDelete) {
+      await db.notifications.delete(n.id);
+    }
+    
     await db.documents.delete(id);
     setRefreshKey(prev => prev + 1);
   };

@@ -130,6 +130,7 @@ export default function QuickExpenseLog({ onExpenseAdded }: Props) {
 
   const handleDeleteMethod = async (methodToDelete: string, e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!(await window.appConfirm('Are you sure you want to delete this item?'))) return;
     const db = getDB();
     const updated = paymentMethods.filter(m => m !== methodToDelete);
     setPaymentMethods(updated);

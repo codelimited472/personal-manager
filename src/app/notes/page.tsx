@@ -58,6 +58,7 @@ export default function NotesPage() {
   };
 
   const deleteNote = async (id: string) => {
+    if (!(await window.appConfirm('Are you sure you want to delete this item?'))) return;
     await db.notes.delete(id);
     setRefreshKey(prev => prev + 1);
   };
@@ -94,6 +95,7 @@ export default function NotesPage() {
   };
 
   const deleteIdea = async (id: string) => {
+    if (!(await window.appConfirm('Are you sure you want to delete this item?'))) return;
     await db.ideas.delete(id);
     setRefreshKey(prev => prev + 1);
   };

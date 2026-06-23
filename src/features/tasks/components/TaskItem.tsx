@@ -31,6 +31,7 @@ export default function TaskItem({ task, onEdit }: TaskItemProps) {
   };
 
   const handleDelete = async (e: React.MouseEvent) => {
+    if (!(await window.appConfirm('Are you sure you want to delete this item?'))) return;
     e.stopPropagation();
     await deleteTask(task.id);
   };

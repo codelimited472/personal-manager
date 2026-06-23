@@ -16,7 +16,7 @@ export default function Home() {
   const [pendingTasksCount, setPendingTasksCount] = useState(0);
   const [habits, setHabits] = useState<(LocalHabit & { completedToday?: boolean })[]>([]);
   const [waterAmount, setWaterAmount] = useState(0);
-  const [expenses, setExpenses] = useState<LocalExpense[]>([]);
+  const [todaySpend, setTodaySpend] = useState<number>(0);
   const [ideas, setIdeas] = useState<any[]>([]);
   const [notifications, setNotifications] = useState<LocalNotification[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -59,13 +59,12 @@ export default function Home() {
         const totalWater = todayWater.reduce((sum, w) => sum + w.amount, 0);
         setWaterAmount(totalWater);
 
-        // 4. Fetch recent expenses
-        const recentExpenses = await db.expenses
-          .orderBy('date')
-          .reverse()
-          .limit(4)
+        // 4. Fetch today's expenses
+        const todayExpenses = await db.expenses
+          .where('date')
+          .equals(todayStr)
           .toArray();
-        setExpenses(recentExpenses);
+        setTodaySpend(todayExpenses.reduce((sum, e) => sum + e.amount, 0));
 
         // 5. Fetch recent ideas
         const recentIdeas = await db.ideas
@@ -101,9 +100,8 @@ export default function Home() {
 
   const dismissNotification = async (id: string) => {
     const db = getDB();
-    const todayStr = getToday();
     await db.notifications.update(id, { 
-      dismissed_date: todayStr,
+      read: true,
       _syncStatus: 'pending'
     });
     setRefreshKey(prev => prev + 1);
@@ -231,7 +229,7 @@ export default function Home() {
         >
           <Wallet className={styles.statIconExpense} />
           <div className={styles.statValue}>
-            ₹{expenses.filter(e => e.date === getToday()).reduce((sum, e) => sum + e.amount, 0).toFixed(0)}
+            ₹{todaySpend.toFixed(0)}
           </div>
           <div className={styles.statLabel}>Today's Spend</div>
         </div>

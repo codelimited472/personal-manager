@@ -67,6 +67,7 @@ export default function WardrobePage() {
   };
 
   const deleteItem = async (id: string) => {
+    if (!(await window.appConfirm('Are you sure you want to delete this item?'))) return;
     await db.wardrobeItems.delete(id);
     setRefreshKey(prev => prev + 1);
   };
@@ -105,6 +106,7 @@ export default function WardrobePage() {
   };
 
   const deleteOutfit = async (id: string) => {
+    if (!(await window.appConfirm('Are you sure you want to delete this item?'))) return;
     await db.outfits.delete(id);
     setRefreshKey(prev => prev + 1);
   };

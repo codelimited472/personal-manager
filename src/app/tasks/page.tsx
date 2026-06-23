@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { useTasks } from '@/features/tasks/hooks/useTasks';
 import TaskList from '@/features/tasks/components/TaskList';
 import TaskForm from '@/features/tasks/components/TaskForm';
-import { Plus, Calendar as CalendarIcon, Clock } from 'lucide-react';
+import { Plus, Calendar as CalendarIcon, Clock, Eye, EyeOff } from 'lucide-react';
 import { getToday, addDays, format } from '@/lib/utils';
 import styles from './tasks.module.css';
 
@@ -16,6 +16,7 @@ function TasksContent() {
   const [selectedDate, setSelectedDate] = useState<string>(getToday());
   const [dateStrip, setDateStrip] = useState<{ dateStr: string; displayDay: string; displayNum: string }[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [hideCompletedTasks, setHideCompletedTasks] = useState(false);
 
   const { tasks, todayTasks, upcomingTasks, stats } = useTasks({ date: selectedDate });
 
@@ -60,7 +61,18 @@ function TasksContent() {
     setShowForm(false);
   };
 
-  const displayTasks = selectedDate === getToday() ? todayTasks : tasks;
+  let displayTasks = selectedDate === getToday() ? todayTasks : tasks;
+
+  if (hideCompletedTasks) {
+    displayTasks = displayTasks.filter(t => t.status !== 'completed');
+  }
+
+  // Sort displayTasks: non-completed first, completed at the bottom
+  displayTasks = [...displayTasks].sort((a, b) => {
+    if (a.status === 'completed' && b.status !== 'completed') return 1;
+    if (b.status === 'completed' && a.status !== 'completed') return -1;
+    return 0;
+  });
 
   return (
     <div className="page">
@@ -96,11 +108,31 @@ function TasksContent() {
         </div>
       </div>
 
-      <div className={styles.sectionHeader} style={{ marginTop: '0' }}>
+      <div className={styles.sectionHeader} style={{ marginTop: '0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h3 className={styles.sectionTitle}>
           <CalendarIcon className={styles.sectionIcon} size={20} /> 
           Tasks for {selectedDate === getToday() ? 'Today' : selectedDate}
         </h3>
+        <button 
+          onClick={() => setHideCompletedTasks(!hideCompletedTasks)}
+          title={hideCompletedTasks ? "Show Completed Tasks" : "Hide Completed Tasks"}
+          style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '6px', 
+            background: 'var(--bg-surface)', 
+            border: '1px solid var(--border-secondary)', 
+            borderRadius: 'var(--radius-full)', 
+            padding: '6px 12px',
+            fontSize: 'var(--text-xs)',
+            fontWeight: 'var(--weight-medium)',
+            color: 'var(--text-secondary)',
+            cursor: 'pointer'
+          }}
+        >
+          {hideCompletedTasks ? <EyeOff size={14} /> : <Eye size={14} />}
+          {hideCompletedTasks ? 'Show' : 'Hide'}
+        </button>
       </div>
 
       {/* Add Button */}

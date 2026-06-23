@@ -59,6 +59,7 @@ export default function InventoryPage() {
   };
 
   const deleteInventoryItem = async (id: string) => {
+    if (!(await window.appConfirm('Are you sure you want to delete this item?'))) return;
     await db.inventoryItems.delete(id);
     setRefreshKey(prev => prev + 1);
   };
@@ -100,6 +101,7 @@ export default function InventoryPage() {
   };
 
   const deleteExpiryItem = async (id: string) => {
+    if (!(await window.appConfirm('Are you sure you want to delete this item?'))) return;
     await db.expiryItems.delete(id);
     setRefreshKey(prev => prev + 1);
   };

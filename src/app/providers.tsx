@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from '@/features/auth/hooks/useAuth';
 import { ThemeProvider } from '@/hooks/useTheme';
 import { SyncProvider } from '@/hooks/useSync';
 import { ToastProvider } from '@/components/ui/Toast';
+import { ConfirmModalProvider } from '@/components/ui/ConfirmModal';
 import BottomNav from '@/components/layout/BottomNav';
 import Header from '@/components/layout/Header';
 import QuickAdd from '@/components/layout/QuickAdd';
@@ -58,6 +59,7 @@ export function ClientProviders({ children }: { children: React.ReactNode }) {
     <ThemeProvider>
       <AuthProvider>
         <ToastProvider>
+          <ConfirmModalProvider />
           <AppShell>{children}</AppShell>
         </ToastProvider>
       </AuthProvider>

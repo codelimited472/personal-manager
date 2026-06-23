@@ -46,6 +46,7 @@ function HabitsContent() {
   };
 
   const handleDelete = async (id: string) => {
+    if (!(await window.appConfirm('Are you sure you want to delete this item?'))) return;
     await deleteHabit(id);
     showToast('Habit deleted', 'info');
   };

@@ -103,6 +103,7 @@ export default function VehiclesPage() {
   };
 
   const deleteVehicle = async (id: string) => {
+    if (!(await window.appConfirm('Are you sure you want to delete this item?'))) return;
     await deleteRecord('vehicles', id);
     setRefreshKey(prev => prev + 1);
   };
