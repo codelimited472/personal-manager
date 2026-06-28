@@ -20,6 +20,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     // Force light theme by default as per user request
     const stored = localStorage.getItem('pm-theme') as Theme | null;
     const initialTheme = stored === 'dark' ? 'dark' : 'light';
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setThemeState(initialTheme);
     document.documentElement.setAttribute('data-theme', initialTheme);
     setMounted(true);

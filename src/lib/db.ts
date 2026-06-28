@@ -19,7 +19,7 @@ export interface LocalTask extends SyncFields {
   description?: string;
   due_date?: string;
   priority: 'low' | 'medium' | 'high' | 'urgent';
-  category: 'personal' | 'work' | 'business' | 'vehicle' | 'travel' | 'shopping';
+  category: string;
   status: 'pending' | 'in_progress' | 'completed' | 'cancelled';
   is_recurring: boolean;
   recurrence_rule?: string;
@@ -195,16 +195,43 @@ export interface LocalRestaurant extends SyncFields {
   created_at: string;
 }
 
-// Buy List
-export interface LocalBuyItem extends SyncFields {
+// Lists
+export interface ListColumn {
+  name: string;
+  type: 'text' | 'number';
+}
+
+export interface LocalList extends SyncFields {
   id: string;
   user_id: string;
   name: string;
-  list_type: string;
-  quantity?: string;
-  price?: number;
-  priority: 'low' | 'medium' | 'high';
-  purchased: boolean;
+  columns?: ListColumn[];
+  created_at: string;
+}
+
+export interface LocalListItem extends SyncFields {
+  id: string;
+  list_id: string;
+  user_id: string;
+  name: string;
+  checked: boolean;
+  custom_fields?: Record<string, string | number>;
+  created_at: string;
+}
+
+export interface LocalAppList extends SyncFields {
+  id: string;
+  user_id: string;
+  name: string;
+  created_at: string;
+}
+
+export interface LocalAppListItem extends SyncFields {
+  id: string;
+  list_id: string;
+  user_id: string;
+  name: string;
+  checked: boolean;
   created_at: string;
 }
 
@@ -282,7 +309,39 @@ export interface LocalBusinessTask extends SyncFields {
   workspace_id: string;
   title: string;
   due_date?: string;
-  status: 'pending' | 'in_progress' | 'completed';
+  priority: 'low' | 'medium' | 'high' | 'critical';
+  status: 'not_started' | 'in_progress' | 'waiting' | 'completed';
+  created_at: string;
+}
+
+export interface LocalBusinessChecklist extends SyncFields {
+  id: string;
+  workspace_id: string;
+  title: string;
+  tasks: string; // JSON string of items { id, content, checked, due_date, priority, notes }
+  progress: number;
+  created_at: string;
+}
+
+export interface LocalBusinessFuturePlan extends SyncFields {
+  id: string;
+  workspace_id: string;
+  title: string;
+  timeline?: string;
+  priority: 'low' | 'medium' | 'high' | 'critical';
+  notes?: string;
+  tags: string[];
+  created_at: string;
+}
+
+export interface LocalBusinessGoal extends SyncFields {
+  id: string;
+  workspace_id: string;
+  title: string;
+  target_date?: string;
+  progress: number;
+  status: 'active' | 'completed' | 'on_hold';
+  milestones: string; // JSON string of milestones { id, title, completed }
   created_at: string;
 }
 
@@ -299,6 +358,7 @@ export interface LocalBusinessIdea extends SyncFields {
   workspace_id: string;
   title: string;
   description?: string;
+  tags: string[];
   status: 'new' | 'exploring' | 'in_progress' | 'implemented';
   created_at: string;
 }
@@ -321,13 +381,32 @@ export interface LocalBusinessContact extends SyncFields {
   created_at: string;
 }
 
+export interface LocalNoteFolder extends SyncFields {
+  id: string;
+  user_id: string;
+  name: string;
+  created_at: string;
+}
+
+export interface LocalHaircut extends SyncFields {
+  id: string;
+  user_id: string;
+  date: string;
+  description: string;
+  location: string;
+  cost: number;
+  created_at: string;
+}
+
 // Notes & Ideas
 export interface LocalNote extends SyncFields {
   id: string;
   user_id: string;
+  folder_id?: string;
   title: string;
   content: string;
   tags: string[];
+  is_deleted?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -397,7 +476,7 @@ class PersonalManagerDB extends Dexie {
   tripPackingItems!: EntityTable<LocalTripPackingItem, 'id'>;
   places!: EntityTable<LocalPlace, 'id'>;
   restaurants!: EntityTable<LocalRestaurant, 'id'>;
-  buyItems!: EntityTable<LocalBuyItem, 'id'>;
+  noteFolders!: EntityTable<LocalNoteFolder, 'id'>;
   inventoryItems!: EntityTable<LocalInventoryItem, 'id'>;
   expiryItems!: EntityTable<LocalExpiryItem, 'id'>;
   wardrobeItems!: EntityTable<LocalWardrobeItem, 'id'>;
@@ -405,6 +484,9 @@ class PersonalManagerDB extends Dexie {
   documents!: EntityTable<LocalDocument, 'id'>;
   businessWorkspaces!: EntityTable<LocalBusinessWorkspace, 'id'>;
   businessTasks!: EntityTable<LocalBusinessTask, 'id'>;
+  businessChecklists!: EntityTable<LocalBusinessChecklist, 'id'>;
+  businessFuturePlans!: EntityTable<LocalBusinessFuturePlan, 'id'>;
+  businessGoals!: EntityTable<LocalBusinessGoal, 'id'>;
   businessNotes!: EntityTable<LocalBusinessNote, 'id'>;
   businessIdeas!: EntityTable<LocalBusinessIdea, 'id'>;
   businessDocuments!: EntityTable<LocalBusinessDocument, 'id'>;
@@ -414,6 +496,9 @@ class PersonalManagerDB extends Dexie {
   captures!: EntityTable<LocalCapture, 'id'>;
   settings!: EntityTable<LocalSettings, 'key'>;
   notifications!: EntityTable<LocalNotification, 'id'>;
+  haircuts!: EntityTable<LocalHaircut, 'id'>;
+  appLists!: EntityTable<LocalAppList, 'id'>;
+  appListItems!: EntityTable<LocalAppListItem, 'id'>;
 
   constructor() {
     super('PersonalManagerDB');
@@ -471,6 +556,35 @@ class PersonalManagerDB extends Dexie {
         if (!setting._syncStatus) setting._syncStatus = 'pending';
         if (!setting.user_id) setting.user_id = 'local-user';
       });
+    });
+
+    this.version(4).stores({
+      buyItems: null,
+      lists: 'id, user_id, name, _syncStatus',
+      listItems: 'id, list_id, user_id, checked, _syncStatus',
+    });
+
+    this.version(6).stores({
+      lists: null,
+      listItems: null,
+      noteFolders: 'id, user_id, name, _syncStatus',
+      notes: 'id, user_id, folder_id, title, _syncStatus',
+    });
+
+    this.version(7).stores({
+      businessChecklists: 'id, workspace_id, _syncStatus',
+      businessFuturePlans: 'id, workspace_id, priority, _syncStatus',
+      businessGoals: 'id, workspace_id, status, _syncStatus',
+      businessTasks: 'id, workspace_id, status, priority, due_date, _syncStatus',
+    });
+
+    this.version(8).stores({
+      haircuts: 'id, user_id, date, _syncStatus',
+    });
+
+    this.version(9).stores({
+      appLists: 'id, user_id, name, _syncStatus',
+      appListItems: 'id, list_id, user_id, checked, _syncStatus',
     });
   }
 }

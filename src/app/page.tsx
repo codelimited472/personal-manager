@@ -8,6 +8,7 @@ import {
 import { getDB, type LocalTask, type LocalHabit, type LocalHabitLog, type LocalWaterLog, type LocalExpense, type LocalNotification } from '@/lib/db';
 import { getToday, isSameDayLocal } from '@/lib/utils';
 import QuickExpenseLog from '@/components/QuickExpenseLog';
+import BillionaireTracker from '@/components/BillionaireTracker';
 import styles from './page.module.css';
 
 export default function Home() {
@@ -17,8 +18,9 @@ export default function Home() {
   const [habits, setHabits] = useState<(LocalHabit & { completedToday?: boolean })[]>([]);
   const [waterAmount, setWaterAmount] = useState(0);
   const [todaySpend, setTodaySpend] = useState<number>(0);
-  const [ideas, setIdeas] = useState<any[]>([]);
+  const [ideas, setIdeas] = useState<unknown[]>([]);
   const [notifications, setNotifications] = useState<LocalNotification[]>([]);
+  const [showBillionaireTracker, setShowBillionaireTracker] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
 
   const waterTarget = 2000; // ml
@@ -77,6 +79,12 @@ export default function Home() {
           .filter(n => !n.read && n.dismissed_date !== todayStr)
           .toArray();
         setNotifications(alerts.slice(0, 3));
+
+        // 7. Fetch settings
+        const bTrackerSetting = await db.settings.get('show_billionaire_tracker');
+        if (bTrackerSetting) {
+          setShowBillionaireTracker(bTrackerSetting.value === 'true');
+        }
 
       } catch (err) {
         console.error('Error loading dashboard data:', err);
@@ -147,8 +155,20 @@ export default function Home() {
 
   const waterPercentage = Math.min(Math.round((waterAmount / waterTarget) * 100), 100);
 
+  const closeBillionaireTracker = async () => {
+    setShowBillionaireTracker(false);
+    const db = getDB();
+    await db.settings.put({
+      key: 'show_billionaire_tracker',
+      user_id: 'local-user', // Should match how settings page saves it
+      value: 'false',
+      _syncStatus: 'pending'
+    });
+  };
+
   return (
     <div className="page">
+      {showBillionaireTracker && <BillionaireTracker onClose={closeBillionaireTracker} />}
       <QuickExpenseLog onExpenseAdded={() => setRefreshKey(prev => prev + 1)} />
 
       {/* Alerts & Reminders */}
@@ -177,7 +197,7 @@ export default function Home() {
       <div className={styles.section}>
         <div className={styles.sectionHeader}>
           <h3 className={styles.sectionTitle}>
-            <CheckSquare className={styles.sectionIcon} /> Today's Todo
+            <CheckSquare className={styles.sectionIcon} /> Today&apos;s Todo
           </h3>
           <button className={styles.addBtn} onClick={() => router.push('/tasks')}>
             <Plus size={16} /> Add Task
@@ -231,7 +251,7 @@ export default function Home() {
           <div className={styles.statValue}>
             ₹{todaySpend.toFixed(0)}
           </div>
-          <div className={styles.statLabel}>Today's Spend</div>
+          <div className={styles.statLabel}>Today&apos;s Spend</div>
         </div>
         <div className={styles.statCard}>
           <CheckSquare className={styles.statIconTasks} />

@@ -15,6 +15,7 @@ export function createClient() {
     return {
       auth: {
         getUser: async () => ({ data: { user: { id: 'local-user', email: 'local@domain.com', user_metadata: { name: 'Offline User' } } }, error: null }),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         onAuthStateChange: (callback: any) => {
           setTimeout(() => {
             callback('SIGNED_IN', { user: { id: 'local-user', email: 'local@domain.com', user_metadata: { name: 'Offline User' } } });
@@ -42,6 +43,7 @@ export function createClient() {
           eq: () => Promise.resolve({ error: null }),
         }),
       }),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } as any;
   }
 

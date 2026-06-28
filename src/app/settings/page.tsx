@@ -1,13 +1,39 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
-import { LogOut, User as UserIcon, Mail, Shield, Moon, Sun } from 'lucide-react';
+import { LogOut, User as UserIcon, Mail, Shield, Moon, Sun, Crown } from 'lucide-react';
+import { getDB } from '@/lib/db';
 import styles from './settings.module.css';
 
 export default function SettingsPage() {
   const { user, loading, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
+  const [showBillionaireTracker, setShowBillionaireTracker] = useState(true);
+
+  useEffect(() => {
+    const loadSettings = async () => {
+      const db = getDB();
+      const setting = await db.settings.get('show_billionaire_tracker');
+      if (setting) {
+        setShowBillionaireTracker(setting.value === 'true');
+      }
+    };
+    loadSettings();
+  }, []);
+
+  const toggleBillionaireTracker = async () => {
+    const newValue = !showBillionaireTracker;
+    setShowBillionaireTracker(newValue);
+    const db = getDB();
+    await db.settings.put({
+      key: 'show_billionaire_tracker',
+      user_id: user?.id || 'local-user',
+      value: newValue.toString(),
+      _syncStatus: 'pending'
+    });
+  };
 
   if (loading) {
     return <div className="page" style={{ padding: 'var(--space-4)' }}>Loading...</div>;
@@ -89,6 +115,33 @@ export default function SettingsPage() {
                 position: 'absolute',
                 top: '2px',
                 left: theme === 'dark' ? '20px' : '2px',
+                transition: 'left 0.3s ease'
+              }} />
+            </div>
+          </div>
+
+          <div className={styles.actionButton} onClick={toggleBillionaireTracker}>
+            <Crown size={18} color="var(--text-secondary)" />
+            <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+              <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>Billionaire Tracker</span>
+              <span>{showBillionaireTracker ? 'Enabled' : 'Disabled'}</span>
+            </div>
+            <div style={{
+              width: '40px',
+              height: '22px',
+              borderRadius: '11px',
+              background: showBillionaireTracker ? 'var(--accent-primary)' : 'var(--border-secondary)',
+              position: 'relative',
+              transition: 'background 0.3s ease'
+            }}>
+              <div style={{
+                width: '18px',
+                height: '18px',
+                borderRadius: '50%',
+                background: 'white',
+                position: 'absolute',
+                top: '2px',
+                left: showBillionaireTracker ? '20px' : '2px',
                 transition: 'left 0.3s ease'
               }} />
             </div>

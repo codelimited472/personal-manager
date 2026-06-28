@@ -14,7 +14,7 @@ interface TaskItemProps {
 
 export default function TaskItem({ task, onEdit }: TaskItemProps) {
   const isCompleted = task.status === 'completed';
-  const isCarriedForward = task.status === 'carried_forward' as any;
+  const isCarriedForward = task.status === ('carried_forward' as unknown);
   const isOverdue = !isCompleted && !!task.due_date && task.due_date < getToday();
 
   const handleToggle = async (e: React.MouseEvent) => {

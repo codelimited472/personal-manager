@@ -33,7 +33,7 @@ export default function QuickExpenseLog({ onExpenseAdded }: Props) {
         if (storedMethods) {
           try {
             setPaymentMethods(JSON.parse(storedMethods.value));
-          } catch(e) {}
+          } catch {}
         }
 
         const allExpenses = await db.expenses.toArray();
@@ -48,7 +48,7 @@ export default function QuickExpenseLog({ onExpenseAdded }: Props) {
             const parsed = JSON.parse(storedCats.value);
             parsed.sort((a: string, b: string) => (catCounts[b] || 0) - (catCounts[a] || 0));
             setSavedCategories(parsed);
-          } catch(e) {}
+          } catch {}
         } else {
           const defaultCats = ['Food', 'Transport', 'Shopping', 'Bills'];
           defaultCats.sort((a: string, b: string) => (catCounts[b] || 0) - (catCounts[a] || 0));

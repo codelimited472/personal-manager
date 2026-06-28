@@ -6,10 +6,11 @@ type SyncableTable =
   | 'captures' | 'notifications' | 'settings'
   | 'vehicles' | 'vehicleIssues' | 'petrolExpenses' 
   | 'employeeProfiles' | 'employeeExpenses' | 'trips' | 'tripExpenses' | 'tripPackingItems'
-  | 'places' | 'restaurants' | 'buyItems' | 'inventoryItems' | 'expiryItems'
+  | 'places' | 'restaurants' | 'noteFolders' | 'inventoryItems' | 'expiryItems'
   | 'wardrobeItems' | 'outfits' | 'documents' | 'businessWorkspaces' | 'businessTasks'
   | 'businessNotes' | 'businessIdeas' | 'businessDocuments' | 'businessContacts'
-  | 'notes' | 'ideas';
+  | 'businessChecklists' | 'businessFuturePlans' | 'businessGoals'
+  | 'notes' | 'ideas' | 'haircuts' | 'appLists' | 'appListItems';
 
 // Maps local Dexie table names to Supabase table names
 const tableMap: Record<SyncableTable, string> = {
@@ -31,7 +32,7 @@ const tableMap: Record<SyncableTable, string> = {
   tripPackingItems: 'trip_packing_items',
   places: 'places',
   restaurants: 'restaurants',
-  buyItems: 'buy_items',
+  noteFolders: 'note_folders',
   inventoryItems: 'inventory_items',
   expiryItems: 'expiry_items',
   wardrobeItems: 'wardrobe_items',
@@ -43,8 +44,14 @@ const tableMap: Record<SyncableTable, string> = {
   businessIdeas: 'business_ideas',
   businessDocuments: 'business_documents',
   businessContacts: 'business_contacts',
+  businessChecklists: 'business_checklists',
+  businessFuturePlans: 'business_future_plans',
+  businessGoals: 'business_goals',
   notes: 'notes',
   ideas: 'ideas',
+  haircuts: 'haircuts',
+  appLists: 'app_lists',
+  appListItems: 'app_list_items',
 };
 
 /**
@@ -65,10 +72,12 @@ export async function pushPendingChanges(tableName: SyncableTable, userId: strin
 
   let synced = 0;
 
-  for (const record of pending as any[]) {
+  for (const record of pending as Record<string, unknown>[]) {
     try {
       // Remove local-only fields before sending to Supabase
       const { _syncStatus, _lastSyncedAt, ...data } = record;
+      void _syncStatus;
+      void _lastSyncedAt;
 
       const idField = tableName === 'settings' ? 'key' : 'id';
 
@@ -182,15 +191,15 @@ export async function syncAll(userId: string): Promise<void> {
   const tier1: SyncableTable[] = [
     'settings', 'tasks', 'habits', 'waterLogs', 'expenses', 'captures',
     'notifications', 'vehicles', 'employeeProfiles', 'trips',
-    'places', 'restaurants', 'buyItems', 'inventoryItems', 'expiryItems',
-    'wardrobeItems', 'documents', 'businessWorkspaces', 'notes', 'ideas'
+    'places', 'restaurants', 'noteFolders', 'inventoryItems', 'expiryItems',
+    'wardrobeItems', 'documents', 'businessWorkspaces', 'notes', 'ideas', 'haircuts', 'appLists'
   ];
 
   // Sync child tables
   const tier2: SyncableTable[] = [
     'habitLogs', 'vehicleIssues', 'petrolExpenses', 'employeeExpenses',
     'tripExpenses', 'tripPackingItems', 'outfits', 'businessTasks',
-    'businessNotes', 'businessIdeas', 'businessDocuments', 'businessContacts'
+    'businessNotes', 'businessIdeas', 'businessDocuments', 'businessContacts', 'appListItems'
   ];
 
   // Sync Tier 1 sequentially or concurrently, but we must await before Tier 2
@@ -242,7 +251,7 @@ export async function processDeletionQueue(): Promise<void> {
           console.error(`[Sync] Failed to process queued deletion for ${item.table}:`, error.message);
           remainingQueue.push(item);
         }
-      } catch (err) {
+      } catch {
         remainingQueue.push(item);
       }
     }

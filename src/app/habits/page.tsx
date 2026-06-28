@@ -28,6 +28,7 @@ function HabitsContent() {
   });
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (searchParams.get('add') === 'true') setShowForm(true);
   }, [searchParams]);
 

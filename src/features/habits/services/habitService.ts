@@ -1,6 +1,6 @@
 import { getDB } from '@/lib/db';
 import { createClient } from '@/lib/supabase/client';
-import { generateId, getTodayISO, getToday } from '@/lib/utils';
+import { generateId, getTodayISO } from '@/lib/utils';
 import { subDays, format } from 'date-fns';
 import type { Habit, HabitFormData, HabitLog } from '../types';
 
@@ -42,6 +42,7 @@ export async function toggleHabitLog(userId: string, habitId: string, date: stri
     if (updated) syncToSupabase('habit_logs', updated).catch(console.error);
   } else {
     // Create new log
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const log: any = {
       id: generateId(),
       user_id: userId,
@@ -70,7 +71,7 @@ export async function deleteHabit(id: string): Promise<void> {
 export async function getStreak(habitId: string): Promise<number> {
   const db = getDB();
   let streak = 0;
-  let date = new Date();
+  const date = new Date();
 
   // Check backwards from today
   for (let i = 0; i < 365; i++) {
@@ -102,6 +103,7 @@ export async function getHabitLogsForMonth(habitId: string, year: number, month:
     .toArray();
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function syncToSupabase(table: string, record: any): Promise<void> {
   try {
     const supabase = createClient();

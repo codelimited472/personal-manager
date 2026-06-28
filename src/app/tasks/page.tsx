@@ -12,6 +12,7 @@ import styles from './tasks.module.css';
 function TasksContent() {
   const searchParams = useSearchParams();
   const [showForm, setShowForm] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [editingTask, setEditingTask] = useState<any>(null);
   const [selectedDate, setSelectedDate] = useState<string>(getToday());
   const [dateStrip, setDateStrip] = useState<{ dateStr: string; displayDay: string; displayNum: string }[]>([]);
@@ -32,6 +33,7 @@ function TasksContent() {
         displayNum: format(d, 'd'),
       });
     }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setDateStrip(strip);
     
     // Scroll to center (today)
@@ -46,11 +48,13 @@ function TasksContent() {
   // Open form if redirected from Quick Add
   useEffect(() => {
     if (searchParams.get('add') === 'true') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setShowForm(true);
       setEditingTask(null);
     }
   }, [searchParams]);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleOpenForm = (task?: any) => {
     setEditingTask(task || null);
     setShowForm(true);
@@ -78,16 +82,22 @@ function TasksContent() {
     <div className="page">
       {/* Calendar Strip */}
       <div className={styles.calendarStrip} ref={scrollRef}>
-        {dateStrip.map(day => (
-          <div 
-            key={day.dateStr}
-            className={`${styles.calendarDay} ${selectedDate === day.dateStr ? styles.calendarDayActive : ''}`}
-            onClick={() => setSelectedDate(day.dateStr)}
-          >
-            <span className={styles.calendarDayName}>{day.displayDay}</span>
-            <span className={styles.calendarDayNum}>{day.displayNum}</span>
-          </div>
-        ))}
+        {dateStrip.map(day => {
+          const isFuture = day.dateStr > getToday();
+          return (
+            <div 
+              key={day.dateStr}
+              className={`${styles.calendarDay} ${selectedDate === day.dateStr ? styles.calendarDayActive : ''}`}
+              style={isFuture ? { opacity: 0.4, cursor: 'not-allowed' } : {}}
+              onClick={() => {
+                if (!isFuture) setSelectedDate(day.dateStr);
+              }}
+            >
+              <span className={styles.calendarDayName}>{day.displayDay}</span>
+              <span className={styles.calendarDayNum}>{day.displayNum}</span>
+            </div>
+          );
+        })}
       </div>
 
       {/* Stats */}
@@ -157,19 +167,7 @@ function TasksContent() {
         />
       </div>
 
-      {/* Upcoming Tasks Section */}
-      {selectedDate === getToday() && upcomingTasks && upcomingTasks.length > 0 && (
-        <>
-          <div className={styles.sectionHeader}>
-            <h3 className={styles.sectionTitle}>
-              <Clock className={styles.sectionIcon} size={20} /> Upcoming Reminders
-            </h3>
-          </div>
-          <div className={styles.taskList} style={{ marginTop: 'var(--space-2)' }}>
-            <TaskList tasks={upcomingTasks} onEditTask={handleOpenForm} />
-          </div>
-        </>
-      )}
+      {/* Upcoming Tasks Section has been removed as per the requirement to only show tasks up till the current day */}
 
       {/* Form Sheet */}
       {showForm && (

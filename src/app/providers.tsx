@@ -7,7 +7,6 @@ import { ToastProvider } from '@/components/ui/Toast';
 import { ConfirmModalProvider } from '@/components/ui/ConfirmModal';
 import BottomNav from '@/components/layout/BottomNav';
 import Header from '@/components/layout/Header';
-import QuickAdd from '@/components/layout/QuickAdd';
 import { usePathname } from 'next/navigation';
 
 function AppShell({ children }: { children: React.ReactNode }) {
@@ -47,7 +46,6 @@ function AppShell({ children }: { children: React.ReactNode }) {
         <main className="app-content">
           {children}
         </main>
-        <QuickAdd />
         <BottomNav />
       </div>
     </SyncProvider>

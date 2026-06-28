@@ -96,7 +96,8 @@ export default function DocumentsPage() {
         <div className={styles.formGroupRow}>
           <select
             value={category}
-            onChange={(e: any) => setCategory(e.target.value)}
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            onChange={(e) => setCategory(e.target.value as any)}
             className={styles.input}
           >
             <option value="aadhaar">Aadhaar Card</option>

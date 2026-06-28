@@ -313,7 +313,7 @@ export default function TravelPage() {
             <div className={styles.formGroupRow}>
               <select
                 value={placeCategory}
-                onChange={(e: any) => setPlaceCategory(e.target.value)}
+                onChange={(e) => setPlaceCategory(e.target.value as 'local' | 'india' | 'international')}
                 className={styles.input}
               >
                 <option value="local">Local</option>
@@ -322,7 +322,7 @@ export default function TravelPage() {
               </select>
               <select
                 value={placePriority}
-                onChange={(e: any) => setPlacePriority(e.target.value)}
+                onChange={(e) => setPlacePriority(e.target.value as 'low' | 'medium' | 'high')}
                 className={styles.input}
               >
                 <option value="low">Low Priority</option>

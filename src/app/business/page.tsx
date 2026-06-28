@@ -1,314 +1,126 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Briefcase, Plus, Trash2, CheckSquare, FileText, Lightbulb, Users, ShieldAlert, FolderOpen } from 'lucide-react';
-import { getDB, type LocalBusinessWorkspace, type LocalBusinessTask, type LocalBusinessNote, type LocalBusinessContact } from '@/lib/db';
+import { useRouter } from 'next/navigation';
+import { Plus, Briefcase, Trash2 } from 'lucide-react';
+import { getDB, type LocalBusinessWorkspace } from '@/lib/db';
+import { deleteRecord } from '@/lib/sync';
 import styles from './business.module.css';
 
-export default function BusinessPage() {
+export default function BusinessHubPage() {
+  const router = useRouter();
   const db = getDB();
   const [workspaces, setWorkspaces] = useState<LocalBusinessWorkspace[]>([]);
-  const [activeWorkspaceId, setActiveWorkspaceId] = useState('');
-
-  // Forms
-  const [workspaceName, setWorkspaceName] = useState('');
-  const [workspaceType, setWorkspaceType] = useState<'clinic' | 'school' | 'annotation' | 'other'>('clinic');
-
-  // Active Workspace Sub-Entities
-  const [tasks, setTasks] = useState<LocalBusinessTask[]>([]);
-  const [notes, setNotes] = useState<LocalBusinessNote[]>([]);
-  const [contacts, setContacts] = useState<LocalBusinessContact[]>([]);
-
-  // Sub-Entity Add Forms
-  const [taskTitle, setTaskTitle] = useState('');
-  const [taskDate, setTaskDate] = useState('');
-
-  const [noteTitle, setNoteTitle] = useState('');
-  const [noteContent, setNoteContent] = useState('');
-
-  const [contactName, setContactName] = useState('');
-  const [contactType, setContactType] = useState<'client' | 'vendor' | 'employee'>('client');
-  const [contactEmail, setContactEmail] = useState('');
-
+  const [isCreating, setIsCreating] = useState(false);
+  const [newName, setNewName] = useState('');
   const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     async function loadWorkspaces() {
       const list = await db.businessWorkspaces.toArray();
-      setWorkspaces(list);
-      if (list.length > 0 && !activeWorkspaceId) {
-        setActiveWorkspaceId(list[0].id);
-      }
+      setWorkspaces(list.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
     }
     loadWorkspaces();
   }, [refreshKey]);
 
-  useEffect(() => {
-    async function loadWorkspaceData() {
-      if (!activeWorkspaceId) return;
-      const tList = await db.businessTasks.where('workspace_id').equals(activeWorkspaceId).toArray();
-      setTasks(tList);
-      const nList = await db.businessNotes.where('workspace_id').equals(activeWorkspaceId).toArray();
-      setNotes(nList);
-      const cList = await db.businessContacts.where('workspace_id').equals(activeWorkspaceId).toArray();
-      setContacts(cList);
-    }
-    loadWorkspaceData();
-  }, [activeWorkspaceId, refreshKey]);
-
-  const addWorkspace = async (e: React.FormEvent) => {
+  const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!workspaceName) return;
+    if (!newName.trim()) return;
 
-    const newWs = {
-      id: crypto.randomUUID(),
-      user_id: 'local-user',
-      name: workspaceName,
-      type: workspaceType,
-      created_at: new Date().toISOString(),
-      _syncStatus: 'pending' as const,
+    const newWs: LocalBusinessWorkspace = { 
+      id: crypto.randomUUID(), 
+      user_id: 'local-user', 
+      name: newName.trim(), 
+      type: 'other', 
+      created_at: new Date().toISOString(), 
+      _syncStatus: 'pending' 
     };
+    
     await db.businessWorkspaces.add(newWs);
-    setActiveWorkspaceId(newWs.id);
-    setWorkspaceName('');
-    setRefreshKey(prev => prev + 1);
+    setNewName('');
+    setIsCreating(false);
+    setRefreshKey(k => k + 1);
   };
 
-  const deleteWorkspace = async (id: string) => {
-    if (!(await window.appConfirm('Are you sure you want to delete this item?'))) return;
-    await db.businessWorkspaces.delete(id);
-    if (activeWorkspaceId === id) setActiveWorkspaceId('');
-    setRefreshKey(prev => prev + 1);
+  const handleDelete = async (e: React.MouseEvent, wsId: string) => {
+    e.stopPropagation();
+    if (!(await window.appConfirm('Are you sure you want to delete this workspace? This will not delete the tasks associated with it.'))) return;
+    await deleteRecord('businessWorkspaces', wsId);
+    setRefreshKey(k => k + 1);
   };
-
-  // Workspace sub-items additions
-  const addTask = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!taskTitle || !activeWorkspaceId) return;
-
-    await db.businessTasks.add({
-      id: crypto.randomUUID(),
-      workspace_id: activeWorkspaceId,
-      title: taskTitle,
-      due_date: taskDate || undefined,
-      status: 'pending',
-      created_at: new Date().toISOString(),
-      _syncStatus: 'pending',
-    });
-
-    setTaskTitle('');
-    setTaskDate('');
-    setRefreshKey(prev => prev + 1);
-  };
-
-  const toggleTask = async (id: string, currentStatus: string) => {
-    const nextStatus = currentStatus === 'completed' ? 'pending' : 'completed';
-    await db.businessTasks.update(id, { status: nextStatus });
-    setRefreshKey(prev => prev + 1);
-  };
-
-  const addNote = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!noteTitle || !noteContent || !activeWorkspaceId) return;
-
-    await db.businessNotes.add({
-      id: crypto.randomUUID(),
-      workspace_id: activeWorkspaceId,
-      title: noteTitle,
-      content: noteContent,
-      created_at: new Date().toISOString(),
-      _syncStatus: 'pending',
-    });
-
-    setNoteTitle('');
-    setNoteContent('');
-    setRefreshKey(prev => prev + 1);
-  };
-
-  const addContact = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!contactName || !activeWorkspaceId) return;
-
-    await db.businessContacts.add({
-      id: crypto.randomUUID(),
-      workspace_id: activeWorkspaceId,
-      name: contactName,
-      type: contactType,
-      email: contactEmail || undefined,
-      created_at: new Date().toISOString(),
-      _syncStatus: 'pending',
-    });
-
-    setContactName('');
-    setContactEmail('');
-    setRefreshKey(prev => prev + 1);
-  };
-
-  const activeWs = workspaces.find(w => w.id === activeWorkspaceId);
 
   return (
-    <div className="page">
-      {/* Workspace Creator */}
-      <form onSubmit={addWorkspace} className={styles.formCard}>
-        <h4 className={styles.formTitle}>New Workspace</h4>
-        <div className={styles.formGroupRow}>
-          <input
-            type="text"
-            placeholder="Workspace Name (e.g. School Portal)"
-            value={workspaceName}
-            onChange={(e) => setWorkspaceName(e.target.value)}
-            className={styles.input}
-            required
-          />
-          <select
-            value={workspaceType}
-            onChange={(e: any) => setWorkspaceType(e.target.value)}
-            className={styles.input}
+    <div className="page" style={{ paddingTop: 'var(--space-4)' }}>
+      <header className={styles.header} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--space-6)' }}>
+        <h2 style={{ fontSize: '1.5rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+          <Briefcase size={24} color="var(--accent-primary)" />
+          Businesses & Ideas
+        </h2>
+        {!isCreating && (
+          <button 
+            className="btn btn-primary" 
+            style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }} 
+            onClick={() => setIsCreating(true)}
           >
-            <option value="clinic">Clinic Manager</option>
-            <option value="school">School Manager</option>
-            <option value="annotation">Annotation Biz</option>
-            <option value="other">Other Venture</option>
-          </select>
-          <button type="submit" className={styles.smallSubmitBtn}>Create</button>
-        </div>
-      </form>
+            <Plus size={16} /> New Workspace
+          </button>
+        )}
+      </header>
 
-      {workspaces.length > 0 ? (
-        <div className={styles.dashboardContainer}>
-          {/* Workspace Select tabbar */}
-          <div className={styles.selectorBar}>
+      <main>
+        {isCreating && (
+          <div className={styles.listCard} style={{ marginBottom: 'var(--space-6)' }}>
+            <h3 style={{ marginBottom: 'var(--space-3)', fontWeight: 600 }}>Create New Workspace</h3>
+            <form onSubmit={handleCreate} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+              <input
+                type="text"
+                autoFocus
+                placeholder="Name (e.g. Next Big Startup, YouTube Channel...)"
+                value={newName}
+                onChange={e => setNewName(e.target.value)}
+                className="input"
+                required
+              />
+              <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+                <button type="submit" className="btn btn-primary">Create</button>
+                <button type="button" className="btn btn-outline" onClick={() => setIsCreating(false)}>Cancel</button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {workspaces.length === 0 && !isCreating ? (
+          <div className={styles.emptyState} style={{ padding: '4rem 1rem', textAlign: 'center', color: 'var(--text-secondary)' }}>
+            <Briefcase size={48} color="var(--border-primary)" style={{ margin: '0 auto 1rem' }} />
+            <p>You haven&apos;t added any businesses or ideas yet.</p>
+          </div>
+        ) : (
+          <div className={styles.dashboardGrid}>
             {workspaces.map(ws => (
-              <button
-                key={ws.id}
-                onClick={() => setActiveWorkspaceId(ws.id)}
-                className={activeWorkspaceId === ws.id ? styles.selectorBtnActive : styles.selectorBtn}
+              <div 
+                key={ws.id} 
+                className={styles.widget} 
+                style={{ cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                onClick={() => router.push(`/business/${ws.id}`)}
               >
-                <Briefcase size={14} /> {ws.name}
-              </button>
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: '1.1rem' }}>{ws.name}</div>
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', marginTop: 4 }}>
+                    Created {new Date(ws.created_at).toLocaleDateString()}
+                  </div>
+                </div>
+                <button 
+                  className="btn-icon" 
+                  onClick={(e) => handleDelete(e, ws.id)}
+                  style={{ color: 'var(--text-secondary)' }}
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
             ))}
           </div>
-
-          <div className={styles.workspaceBody}>
-            {/* 1. Workspace specific tasks */}
-            <div className={styles.card}>
-              <h4 className={styles.cardHeader}><CheckSquare size={16} /> Tasks & Deadlines</h4>
-              <form onSubmit={addTask} className={styles.subForm}>
-                <input
-                  type="text"
-                  placeholder="Task title"
-                  value={taskTitle}
-                  onChange={(e) => setTaskTitle(e.target.value)}
-                  className={styles.subInput}
-                  required
-                />
-                <input
-                  type="date"
-                  value={taskDate}
-                  onChange={(e) => setTaskDate(e.target.value)}
-                  className={styles.subInput}
-                />
-                <button type="submit" className={styles.addBtn}>Add</button>
-              </form>
-              <div className={styles.subList}>
-                {tasks.map(t => (
-                  <div key={t.id} className={styles.subItem} onClick={() => toggleTask(t.id, t.status)}>
-                    <span className={t.status === 'completed' ? styles.taskTextDone : styles.taskText}>
-                      {t.title} {t.due_date && <span className={styles.dateLabel}>({t.due_date})</span>}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* 2. Workspace Meeting Notes */}
-            <div className={styles.card}>
-              <h4 className={styles.cardHeader}><FileText size={16} /> Operational Notes</h4>
-              <form onSubmit={addNote} className={styles.subFormCol}>
-                <input
-                  type="text"
-                  placeholder="Note Title"
-                  value={noteTitle}
-                  onChange={(e) => setNoteTitle(e.target.value)}
-                  className={styles.subInput}
-                  required
-                />
-                <textarea
-                  placeholder="Meeting details, processes, operational SOPs..."
-                  value={noteContent}
-                  onChange={(e) => setNoteContent(e.target.value)}
-                  className={styles.subTextArea}
-                  required
-                />
-                <button type="submit" className={styles.addBtnCol}>Save Note</button>
-              </form>
-              <div className={styles.subList}>
-                {notes.map(n => (
-                  <div key={n.id} className={styles.noteItem}>
-                    <strong>{n.title}</strong>
-                    <p>{n.content}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* 3. Workspace Contacts */}
-            <div className={styles.card}>
-              <h4 className={styles.cardHeader}><Users size={16} /> Workspace Contacts</h4>
-              <form onSubmit={addContact} className={styles.subFormCol}>
-                <input
-                  type="text"
-                  placeholder="Contact Name"
-                  value={contactName}
-                  onChange={(e) => setContactName(e.target.value)}
-                  className={styles.subInput}
-                  required
-                />
-                <div className={styles.formGroupRow}>
-                  <select
-                    value={contactType}
-                    onChange={(e: any) => setContactType(e.target.value)}
-                    className={styles.subInput}
-                  >
-                    <option value="client">Client</option>
-                    <option value="vendor">Vendor</option>
-                    <option value="employee">Employee</option>
-                  </select>
-                  <input
-                    type="email"
-                    placeholder="Email"
-                    value={contactEmail}
-                    onChange={(e) => setContactEmail(e.target.value)}
-                    className={styles.subInput}
-                  />
-                </div>
-                <button type="submit" className={styles.addBtnCol}>Add Contact</button>
-              </form>
-              <div className={styles.subList}>
-                {contacts.map(c => (
-                  <div key={c.id} className={styles.contactItem}>
-                    <div>
-                      <strong>{c.name}</strong>
-                      <span>{c.type} {c.email && `• ${c.email}`}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {activeWs && (
-              <button
-                onClick={() => deleteWorkspace(activeWs.id)}
-                className={styles.deleteWorkspaceBtn}
-              >
-                <Trash2 size={16} /> Delete "{activeWs.name}" Workspace
-              </button>
-            )}
-          </div>
-        </div>
-      ) : (
-        <p className={styles.emptyState}>Create a workspace above to manage your business units (Clinic, School, etc.).</p>
-      )}
+        )}
+      </main>
     </div>
   );
 }

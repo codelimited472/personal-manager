@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Archive, Plus, Trash2, Calendar, ShoppingCart, Check, Heart } from 'lucide-react';
+import { Archive, Plus, Trash2, Calendar, List as ListIcon, Check, Heart } from 'lucide-react';
 import { getDB, type LocalInventoryItem, type LocalExpiryItem } from '@/lib/db';
 import styles from './inventory.module.css';
 
@@ -106,7 +106,7 @@ export default function InventoryPage() {
     setRefreshKey(prev => prev + 1);
   };
 
-  // (Buy List logic moved to /shopping)
+  // (Buy List logic moved to /lists)
 
   return (
     <div className="page">
@@ -148,7 +148,7 @@ export default function InventoryPage() {
             <div className={styles.formGroup}>
               <select
                 value={itemCondition}
-                onChange={(e: any) => setItemCondition(e.target.value)}
+                onChange={(e) => setItemCondition(e.target.value as 'new' | 'good' | 'fair' | 'poor')}
                 className={styles.input}
               >
                 <option value="new">Condition: New</option>
@@ -200,7 +200,8 @@ export default function InventoryPage() {
             <div className={styles.formGroupRow}>
               <select
                 value={expCategory}
-                onChange={(e: any) => setExpCategory(e.target.value)}
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                onChange={(e) => setExpCategory(e.target.value as any)}
                 className={styles.input}
               >
                 <option value="medicine">Medicine</option>

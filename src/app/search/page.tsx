@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search as SearchIcon, CheckSquare, Compass, Wallet, FileText, Lightbulb, Car, Briefcase, MapPin, ShoppingCart, Archive, Calendar, HelpCircle } from 'lucide-react';
+import { Search as SearchIcon, CheckSquare, Compass, Wallet, FileText, Lightbulb, Car, Briefcase, MapPin, List as ListIcon, Archive, Calendar, HelpCircle } from 'lucide-react';
 import { getDB } from '@/lib/db';
 import styles from './search.module.css';
 
@@ -11,7 +11,7 @@ interface SearchResult {
   title: string;
   subtitle?: string;
   link: string;
-  icon: any;
+  icon: React.ElementType;
 }
 
 export default function SearchPage() {
@@ -21,6 +21,7 @@ export default function SearchPage() {
 
   useEffect(() => {
     if (!query.trim()) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setResults([]);
       return;
     }
@@ -149,20 +150,18 @@ export default function SearchPage() {
           icon: MapPin,
         }));
 
-        // 10. Buy Items
-        const buyItems = await db.buyItems
-          .filter(b => b.name.toLowerCase().includes(lowercaseQuery))
+        // 10. Notes
+        const nItems = await db.notes
+          .filter(n => n.title.toLowerCase().includes(lowercaseQuery) || n.content.toLowerCase().includes(lowercaseQuery))
           .toArray();
-        buyItems.forEach(b => list.push({
-          id: b.id,
-          type: 'Buy List',
-          title: b.name,
-          subtitle: `List: ${b.list_type} | Purchased: ${b.purchased ? 'Yes' : 'No'}`,
-          link: '/shopping',
-          icon: ShoppingCart,
+        nItems.forEach(n => list.push({
+          id: n.id,
+          type: 'Knowledge Note',
+          title: n.title,
+          subtitle: `Tags: ${n.tags.join(', ')}`,
+          link: '/notes',
+          icon: FileText,
         }));
-
-        // 11. Inventory
         const inventory = await db.inventoryItems
           .filter(i => i.name.toLowerCase().includes(lowercaseQuery) || i.category.toLowerCase().includes(lowercaseQuery))
           .toArray();

@@ -1,12 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { createTask, updateTask } from '../services/taskService';
 import { TASK_PRIORITIES, TASK_CATEGORIES } from '../constants';
 import { useToast } from '@/components/ui/Toast';
 import type { Task, TaskFormData, TaskPriority, TaskCategory } from '../types';
-import { X } from 'lucide-react';
+import { getDB, type LocalBusinessWorkspace } from '@/lib/db';
+import { X, Briefcase } from 'lucide-react';
 import styles from './TaskForm.module.css';
 
 interface TaskFormProps {
@@ -19,6 +20,7 @@ export default function TaskForm({ onClose, onCreated, initialData }: TaskFormPr
   const { user } = useAuth();
   const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [workspaces, setWorkspaces] = useState<LocalBusinessWorkspace[]>([]);
   const [form, setForm] = useState<TaskFormData>({
     title: initialData?.title || '',
     description: initialData?.description || '',
@@ -27,6 +29,15 @@ export default function TaskForm({ onClose, onCreated, initialData }: TaskFormPr
     category: initialData?.category || 'personal',
     is_recurring: initialData?.is_recurring || false,
   });
+
+  useEffect(() => {
+    async function loadWorkspaces() {
+      const db = getDB();
+      const ws = await db.businessWorkspaces.toArray();
+      setWorkspaces(ws);
+    }
+    loadWorkspaces();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -131,17 +142,39 @@ export default function TaskForm({ onClose, onCreated, initialData }: TaskFormPr
           <div className="input-group">
             <label className="input-label">Category</label>
             <div className={styles.chipGroup}>
-              {TASK_CATEGORIES.map(c => (
-                <button
-                  key={c.value}
-                  type="button"
-                  className={`${styles.chip} ${form.category === c.value ? styles.chipActive : ''}`}
-                  onClick={() => setForm({ ...form, category: c.value as TaskCategory })}
-                >
-                  {c.emoji} {c.label}
-                </button>
-              ))}
+              {TASK_CATEGORIES.map(c => {
+                if (c.value === 'business') return null; // We hide the default 'business' category since we use dynamic workspaces
+                return (
+                  <button
+                    key={c.value}
+                    type="button"
+                    className={`${styles.chip} ${form.category === c.value ? styles.chipActive : ''}`}
+                    onClick={() => setForm({ ...form, category: c.value as TaskCategory })}
+                  >
+                    {c.emoji} {c.label}
+                  </button>
+                );
+              })}
             </div>
+            
+            {workspaces.length > 0 && (
+              <div style={{ marginTop: 'var(--space-3)' }}>
+                <label className="input-label" style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>Businesses & Ideas</label>
+                <div className={styles.chipGroup}>
+                  {workspaces.map(w => (
+                    <button
+                      key={w.id}
+                      type="button"
+                      className={`${styles.chip} ${form.category === w.name ? styles.chipActive : ''}`}
+                      onClick={() => setForm({ ...form, category: w.name })}
+                    >
+                      <Briefcase size={12} style={{ marginRight: 4, display: 'inline-block' }} />
+                      {w.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Submit */}

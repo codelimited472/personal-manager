@@ -147,7 +147,7 @@ export default function WardrobePage() {
             <div className={styles.formGroupRow}>
               <select
                 value={category}
-                onChange={(e: any) => setCategory(e.target.value)}
+                onChange={(e) => setCategory(e.target.value as 'formal' | 'casual' | 'party' | 'gym' | 'traditional')}
                 className={styles.input}
               >
                 <option value="casual">Casual</option>
@@ -158,7 +158,7 @@ export default function WardrobePage() {
               </select>
               <select
                 value={type}
-                onChange={(e: any) => setType(e.target.value)}
+                onChange={(e) => setType(e.target.value as 'clothing' | 'shoes' | 'watches' | 'accessories' | 'bags')}
                 className={styles.input}
               >
                 <option value="clothing">Clothing</option>

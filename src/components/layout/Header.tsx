@@ -1,7 +1,7 @@
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
-import { Search, Bell, ArrowLeft } from 'lucide-react';
+import { Search, ArrowLeft } from 'lucide-react';
 import { useSync } from '@/hooks/useSync';
 import { cn } from '@/lib/utils';
 import styles from './Header.module.css';
@@ -30,7 +30,7 @@ const pageTitles: Record<string, string> = {
   '/travel': 'Travel',
   '/places': 'Places',
   '/food': 'Food & Restaurants',
-  '/shopping': 'Shopping List',
+  '/lists': 'Lists',
   '/employees': 'Employees',
   '/backpack': 'Packing',
   '/expiry': 'Expiry Tracker',

@@ -19,7 +19,7 @@ export function useTasks(filter?: {
       if (!userId) return [];
       const db = getDB();
 
-      let query = db.tasks.where('user_id').equals(userId);
+      const query = db.tasks.where('user_id').equals(userId);
 
       let results = await query.toArray();
 
@@ -45,7 +45,7 @@ export function useTasks(filter?: {
               // If it's a past date (or today but not completed today), we know it wasn't completed ON that date.
               // If queryDate < today, it's definitely carried forward to next day.
               if (queryDate < today) {
-                return { ...t, status: 'carried_forward' as any };
+                return { ...t, status: 'carried_forward' as unknown as TaskStatus };
               }
               return { ...t, status: 'pending' };
             }

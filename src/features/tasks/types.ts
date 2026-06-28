@@ -15,7 +15,7 @@ export interface Task {
 }
 
 export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
-export type TaskCategory = 'personal' | 'work' | 'business' | 'vehicle' | 'travel' | 'shopping';
+export type TaskCategory = string;
 export type TaskStatus = 'pending' | 'in_progress' | 'completed' | 'cancelled';
 
 export interface TaskFormData {

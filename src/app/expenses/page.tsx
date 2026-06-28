@@ -318,7 +318,7 @@ export default function ExpensesPage() {
           <div className={pageStyles.statsGrid}>
             <div className={pageStyles.statCard}>
               <div className={pageStyles.statValue}>₹{todaySpend}</div>
-              <div className={pageStyles.statLabel}>Today's Spend</div>
+              <div className={pageStyles.statLabel}>Today&apos;s Spend</div>
             </div>
             <div className={pageStyles.statCard}>
               <div className={pageStyles.statValue}>₹{monthlySpend}</div>

@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import {
-  Car, FileText, Shirt, Archive, Compass, Briefcase, MapPin, ShoppingCart, Lightbulb, BarChart3, Settings
+  Car, FileText, Shirt, Archive, Compass, Briefcase, MapPin, List as ListIcon, Lightbulb, BarChart3, Settings, BookOpen, Scissors
 } from 'lucide-react';
 import styles from './more.module.css';
 
@@ -11,12 +11,13 @@ const moreMenu = [
   { label: 'Document Vault', icon: FileText, href: '/documents', color: 'var(--accent-info)' },
   { label: 'Wardrobe & Outfits', icon: Shirt, href: '/wardrobe', color: 'var(--accent-danger)' },
   { label: 'Vehicles & Issues', icon: Car, href: '/vehicles', color: 'var(--accent-warning)' },
-  { label: 'Notes & Ideas KB', icon: Lightbulb, href: '/notes', color: 'var(--accent-primary)' },
+  { label: 'Notes', icon: BookOpen, href: '/notes', color: 'var(--accent-primary)' },
   { label: 'Travel & Packing', icon: Compass, href: '/travel', color: 'var(--accent-secondary)' },
   { label: 'Inventory & Expiries', icon: Archive, href: '/inventory', color: 'var(--accent-success)' },
   { label: 'Places & Restaurants', icon: MapPin, href: '/places', color: 'var(--accent-info)' },
-  { label: 'Shopping & Buy List', icon: ShoppingCart, href: '/shopping', color: 'var(--accent-success)' },
   { label: 'Reports & Analytics', icon: BarChart3, href: '/analytics', color: 'var(--accent-secondary)' },
+  { label: 'Lists', icon: ListIcon, href: '/lists', color: 'var(--accent-warning)' },
+  { label: 'Haircut Tracker', icon: Scissors, href: '/haircuts', color: 'var(--accent-danger)' },
   { label: 'Settings', icon: Settings, href: '/settings', color: 'var(--accent-primary)' },
 ];
 
