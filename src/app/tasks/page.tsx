@@ -19,6 +19,19 @@ function TasksContent() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [hideCompletedTasks, setHideCompletedTasks] = useState(false);
 
+  useEffect(() => {
+    const stored = localStorage.getItem('hideCompletedTasks');
+    if (stored) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setHideCompletedTasks(stored === 'true');
+    }
+  }, []);
+
+  const toggleHideCompletedTasks = () => {
+    const newValue = !hideCompletedTasks;
+    setHideCompletedTasks(newValue);
+    localStorage.setItem('hideCompletedTasks', String(newValue));
+  };
   const { tasks, todayTasks, upcomingTasks, stats } = useTasks({ date: selectedDate });
 
   // Generate 15 days (7 days before, today, 7 days after)
@@ -124,7 +137,7 @@ function TasksContent() {
           Tasks for {selectedDate === getToday() ? 'Today' : selectedDate}
         </h3>
         <button 
-          onClick={() => setHideCompletedTasks(!hideCompletedTasks)}
+          onClick={toggleHideCompletedTasks}
           title={hideCompletedTasks ? "Show Completed Tasks" : "Hide Completed Tasks"}
           style={{ 
             display: 'flex', 

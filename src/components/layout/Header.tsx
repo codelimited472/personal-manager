@@ -26,7 +26,7 @@ const pageTitles: Record<string, string> = {
   '/inventory': 'Inventory',
   '/ideas': 'Ideas',
   '/notes': 'Notes',
-  '/businesses': 'Businesses',
+  '/business': 'Businesses & Ideas',
   '/travel': 'Travel',
   '/places': 'Places',
   '/food': 'Food & Restaurants',
@@ -46,7 +46,13 @@ export default function Header({ title, showBack, showSearch = true, showSync = 
 
   if (pathname === '/login') return null;
 
-  const pageTitle = title || pageTitles[pathname] || 'Personal Manager';
+  let pageTitle = title || pageTitles[pathname];
+  if (!pageTitle && pathname?.startsWith('/business/')) {
+    pageTitle = 'Businesses & Ideas';
+  }
+  if (!pageTitle) {
+    pageTitle = 'Personal Manager';
+  }
   const isHome = pathname === '/';
 
   return (

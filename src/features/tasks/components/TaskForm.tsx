@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { createTask, updateTask } from '../services/taskService';
 import { TASK_PRIORITIES, TASK_CATEGORIES } from '../constants';
@@ -21,6 +21,16 @@ export default function TaskForm({ onClose, onCreated, initialData }: TaskFormPr
   const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
   const [workspaces, setWorkspaces] = useState<LocalBusinessWorkspace[]>([]);
+  const titleInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (titleInputRef.current) {
+        titleInputRef.current.focus();
+      }
+    }, 100);
+    return () => clearTimeout(timer);
+  }, []);
   const [form, setForm] = useState<TaskFormData>({
     title: initialData?.title || '',
     description: initialData?.description || '',
@@ -86,11 +96,11 @@ export default function TaskForm({ onClose, onCreated, initialData }: TaskFormPr
           {/* Title */}
           <div className="input-group">
             <input
+              ref={titleInputRef}
               className="input"
               placeholder="What needs to be done?"
               value={form.title}
               onChange={e => setForm({ ...form, title: e.target.value })}
-              autoFocus
               required
               id="task-title-input"
             />
@@ -160,19 +170,19 @@ export default function TaskForm({ onClose, onCreated, initialData }: TaskFormPr
             {workspaces.length > 0 && (
               <div style={{ marginTop: 'var(--space-3)' }}>
                 <label className="input-label" style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>Businesses & Ideas</label>
-                <div className={styles.chipGroup}>
+                <select
+                  className="input"
+                  style={{ marginTop: '4px', cursor: 'pointer' }}
+                  value={workspaces.some(w => w.name === form.category) ? form.category : ''}
+                  onChange={e => setForm({ ...form, category: e.target.value })}
+                >
+                  <option value="" disabled>Select a business or idea...</option>
                   {workspaces.map(w => (
-                    <button
-                      key={w.id}
-                      type="button"
-                      className={`${styles.chip} ${form.category === w.name ? styles.chipActive : ''}`}
-                      onClick={() => setForm({ ...form, category: w.name })}
-                    >
-                      <Briefcase size={12} style={{ marginRight: 4, display: 'inline-block' }} />
+                    <option key={w.id} value={w.name}>
                       {w.name}
-                    </button>
+                    </option>
                   ))}
-                </div>
+                </select>
               </div>
             )}
           </div>

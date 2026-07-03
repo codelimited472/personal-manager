@@ -6,14 +6,14 @@ import { Plus, ChevronDown, CheckSquare, Target, Lightbulb, Clock, Layout, List 
 import { getDB, type LocalBusinessWorkspace, type LocalBusinessTask, type LocalBusinessChecklist, type LocalBusinessFuturePlan, type LocalBusinessGoal, type LocalBusinessNote, type LocalBusinessIdea, type LocalTask } from '@/lib/db';
 import styles from '../business.module.css';
 
-type Tab = 'dashboard' | 'checklists' | 'todo' | 'plans' | 'ideas' | 'notes' | 'goals';
+type Tab = 'checklists' | 'todo' | 'plans' | 'ideas' | 'notes' | 'goals';
 
 export default function BusinessDetailsPage() {
   const { id } = useParams() as { id: string };
   const router = useRouter();
   const db = getDB();
   const [workspace, setWorkspace] = useState<LocalBusinessWorkspace | null>(null);
-  const [activeTab, setActiveTab] = useState<Tab>('dashboard');
+  const [activeTab, setActiveTab] = useState<Tab>('checklists');
   const [refreshKey, setRefreshKey] = useState(0);
 
   // Data
@@ -137,46 +137,6 @@ export default function BusinessDetailsPage() {
   // -------------------------------------------------------------
   // Rendering Helpers
   // -------------------------------------------------------------
-  const renderDashboard = () => {
-    const totalLegacy = legacyTasks.length;
-    const completedLegacy = legacyTasks.filter(t => t.status === 'completed').length;
-    
-    const totalGeneric = tasks.length;
-    const completedGeneric = tasks.filter(t => t.status === 'completed').length;
-
-    const totalTasks = totalLegacy + totalGeneric;
-    const completedTasks = completedLegacy + completedGeneric;
-
-    const progress = totalTasks === 0 ? 0 : Math.round((completedTasks / totalTasks) * 100);
-
-    return (
-      <div className={styles.dashboardGrid}>
-        <div className={styles.widget} style={{ gridColumn: '1 / -1' }}>
-          <div className={styles.widgetLabel}>Overall Progress</div>
-          <div className={styles.widgetValue}>{progress}%</div>
-          <div className={styles.progressBar}>
-            <div className={styles.progressFill} style={{ width: `${progress}%` }} />
-          </div>
-        </div>
-        <div className={styles.widget}>
-          <div className={styles.widgetLabel}>Total Tasks</div>
-          <div className={styles.widgetValue}>{totalTasks}</div>
-        </div>
-        <div className={styles.widget}>
-          <div className={styles.widgetLabel}>Pending</div>
-          <div className={styles.widgetValue}>{totalTasks - completedTasks}</div>
-        </div>
-        <div className={styles.widget}>
-          <div className={styles.widgetLabel}>Active Goals</div>
-          <div className={styles.widgetValue}>{goals.filter(g => g.status === 'active').length}</div>
-        </div>
-        <div className={styles.widget}>
-          <div className={styles.widgetLabel}>New Ideas</div>
-          <div className={styles.widgetValue}>{ideas.filter(i => i.status === 'new').length}</div>
-        </div>
-      </div>
-    );
-  };
 
   const renderKanban = () => {
     // We map legacy status + new status into consolidated columns
@@ -314,13 +274,12 @@ export default function BusinessDetailsPage() {
 
       {/* Tabs */}
       <div className={styles.tabsContainer}>
-        {(['dashboard', 'checklists', 'todo', 'plans', 'ideas', 'notes', 'goals'] as Tab[]).map(t => (
+        {(['checklists', 'todo', 'plans', 'ideas', 'notes', 'goals'] as Tab[]).map(t => (
           <div 
             key={t}
             className={activeTab === t ? styles.tabActive : styles.tab}
             onClick={() => setActiveTab(t)}
           >
-            {t === 'dashboard' && <Layout size={14} />}
             {t === 'checklists' && <CheckSquare size={14} />}
             {t === 'todo' && <ListIcon size={14} />}
             {t === 'plans' && <Clock size={14} />}
@@ -334,8 +293,6 @@ export default function BusinessDetailsPage() {
 
       {/* Main Content */}
       <main className={styles.main}>
-        {activeTab === 'dashboard' && renderDashboard()}
-        
         {activeTab === 'todo' && (
           <>
             <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: -16 }}>
@@ -462,7 +419,7 @@ export default function BusinessDetailsPage() {
       {renderNotesEditor()}
 
       {/* Global FAB */}
-      {!activeNote && activeTab !== 'dashboard' && (
+      {!activeNote && (
         <button className={styles.fab} onClick={() => setModalType(activeTab)}>
           <Plus size={24} />
         </button>

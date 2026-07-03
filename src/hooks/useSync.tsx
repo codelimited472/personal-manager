@@ -72,10 +72,8 @@ export function SyncProvider({ children, userId }: { children: ReactNode; userId
   // Sync when coming back online
   useEffect(() => {
     if (isOnline && userId) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       triggerSync();
     } else if (!isOnline) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSyncState('offline');
     }
   }, [isOnline, userId, triggerSync]);
