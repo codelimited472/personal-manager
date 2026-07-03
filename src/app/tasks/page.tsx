@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { useTasks } from '@/features/tasks/hooks/useTasks';
 import TaskList from '@/features/tasks/components/TaskList';
 import TaskForm from '@/features/tasks/components/TaskForm';
-import { Plus, Calendar as CalendarIcon, Clock, Eye, EyeOff } from 'lucide-react';
+import { Plus, Calendar as CalendarIcon, Eye, EyeOff } from 'lucide-react';
 import { getToday, addDays, format } from '@/lib/utils';
 import styles from './tasks.module.css';
 
@@ -32,7 +32,7 @@ function TasksContent() {
     setHideCompletedTasks(newValue);
     localStorage.setItem('hideCompletedTasks', String(newValue));
   };
-  const { tasks, todayTasks, upcomingTasks, stats } = useTasks({ date: selectedDate });
+  const { tasks, todayTasks, stats } = useTasks({ date: selectedDate });
 
   // Generate 15 days (7 days before, today, 7 days after)
   useEffect(() => {

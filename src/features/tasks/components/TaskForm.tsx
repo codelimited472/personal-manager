@@ -7,7 +7,7 @@ import { TASK_PRIORITIES, TASK_CATEGORIES } from '../constants';
 import { useToast } from '@/components/ui/Toast';
 import type { Task, TaskFormData, TaskPriority, TaskCategory } from '../types';
 import { getDB, type LocalBusinessWorkspace } from '@/lib/db';
-import { X, Briefcase } from 'lucide-react';
+import { X } from 'lucide-react';
 import styles from './TaskForm.module.css';
 
 interface TaskFormProps {

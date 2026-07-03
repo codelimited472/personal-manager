@@ -138,7 +138,8 @@ export async function pullFromSupabase(
   // Tables that don't have user_id directly
   const noUserIdTables = [
     'vehicleIssues', 'tripExpenses', 'tripPackingItems', 'businessTasks',
-    'businessNotes', 'businessIdeas', 'businessDocuments', 'businessContacts'
+    'businessNotes', 'businessIdeas', 'businessDocuments', 'businessContacts',
+    'businessChecklists', 'businessFuturePlans', 'businessGoals'
   ];
 
   if (!noUserIdTables.includes(tableName)) {
@@ -192,14 +193,16 @@ export async function syncAll(userId: string): Promise<void> {
     'settings', 'tasks', 'habits', 'waterLogs', 'expenses', 'captures',
     'notifications', 'vehicles', 'employeeProfiles', 'trips',
     'places', 'restaurants', 'noteFolders', 'inventoryItems', 'expiryItems',
-    'wardrobeItems', 'documents', 'businessWorkspaces', 'notes', 'ideas', 'haircuts', 'appLists'
+    'wardrobeItems', 'documents', 'businessWorkspaces', 'ideas', 'haircuts', 'appLists'
   ];
 
   // Sync child tables
   const tier2: SyncableTable[] = [
     'habitLogs', 'vehicleIssues', 'petrolExpenses', 'employeeExpenses',
     'tripExpenses', 'tripPackingItems', 'outfits', 'businessTasks',
-    'businessNotes', 'businessIdeas', 'businessDocuments', 'businessContacts', 'appListItems'
+    'businessNotes', 'businessIdeas', 'businessDocuments', 'businessContacts', 
+    'businessChecklists', 'businessFuturePlans', 'businessGoals',
+    'appListItems', 'notes'
   ];
 
   // Sync Tier 1 sequentially or concurrently, but we must await before Tier 2
