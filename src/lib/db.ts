@@ -195,6 +195,18 @@ export interface LocalRestaurant extends SyncFields {
   created_at: string;
 }
 
+// Events / Important Dates
+export interface LocalEvent extends SyncFields {
+  id: string;
+  user_id: string;
+  title: string;
+  date: string; // Original date YYYY-MM-DD
+  type: 'birthday' | 'anniversary' | 'reminder' | 'other';
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+}
+
 // Lists
 export interface ListColumn {
   name: string;
@@ -499,6 +511,7 @@ class PersonalManagerDB extends Dexie {
   haircuts!: EntityTable<LocalHaircut, 'id'>;
   appLists!: EntityTable<LocalAppList, 'id'>;
   appListItems!: EntityTable<LocalAppListItem, 'id'>;
+  events!: EntityTable<LocalEvent, 'id'>;
 
   constructor() {
     super('PersonalManagerDB');
@@ -585,6 +598,10 @@ class PersonalManagerDB extends Dexie {
     this.version(9).stores({
       appLists: 'id, user_id, name, _syncStatus',
       appListItems: 'id, list_id, user_id, checked, _syncStatus',
+    });
+
+    this.version(10).stores({
+      events: 'id, user_id, date, type, _syncStatus',
     });
   }
 }

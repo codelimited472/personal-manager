@@ -36,7 +36,9 @@ const pageTitles: Record<string, string> = {
   '/expiry': 'Expiry Tracker',
   '/settings': 'Settings',
   '/search': 'Search',
+  '/events': 'Important Dates',
   '/more': 'More',
+  '/settings/sync-debug': 'Sync Diagnostics',
 };
 
 export default function Header({ title, showBack, showSearch = true, showSync = true, rightAction }: HeaderProps) {

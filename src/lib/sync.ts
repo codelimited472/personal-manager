@@ -10,10 +10,10 @@ type SyncableTable =
   | 'wardrobeItems' | 'outfits' | 'documents' | 'businessWorkspaces' | 'businessTasks'
   | 'businessNotes' | 'businessIdeas' | 'businessDocuments' | 'businessContacts'
   | 'businessChecklists' | 'businessFuturePlans' | 'businessGoals'
-  | 'notes' | 'ideas' | 'haircuts' | 'appLists' | 'appListItems';
+  | 'notes' | 'ideas' | 'haircuts' | 'appLists' | 'appListItems' | 'events';
 
 // Maps local Dexie table names to Supabase table names
-const tableMap: Record<SyncableTable, string> = {
+export const tableMap: Record<SyncableTable, string> = {
   tasks: 'tasks',
   habits: 'habits',
   habitLogs: 'habit_logs',
@@ -52,6 +52,7 @@ const tableMap: Record<SyncableTable, string> = {
   haircuts: 'haircuts',
   appLists: 'app_lists',
   appListItems: 'app_list_items',
+  events: 'events',
 };
 
 /**
@@ -193,7 +194,7 @@ export async function syncAll(userId: string): Promise<void> {
     'settings', 'tasks', 'habits', 'waterLogs', 'expenses', 'captures',
     'notifications', 'vehicles', 'employeeProfiles', 'trips',
     'places', 'restaurants', 'noteFolders', 'inventoryItems', 'expiryItems',
-    'wardrobeItems', 'documents', 'businessWorkspaces', 'ideas', 'haircuts', 'appLists'
+    'wardrobeItems', 'documents', 'businessWorkspaces', 'ideas', 'haircuts', 'appLists', 'events'
   ];
 
   // Sync child tables

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
-import { LogOut, User as UserIcon, Mail, Shield, Moon, Sun, Crown } from 'lucide-react';
+import { LogOut, User as UserIcon, Mail, Shield, Moon, Sun, Crown, RefreshCw, ArrowLeft } from 'lucide-react';
 import { getDB } from '@/lib/db';
 import styles from './settings.module.css';
 
@@ -145,6 +145,14 @@ export default function SettingsPage() {
                 transition: 'left 0.3s ease'
               }} />
             </div>
+          </div>
+          <div className={styles.actionButton} onClick={() => window.location.href = '/settings/sync-debug'}>
+            <RefreshCw size={18} color="var(--text-secondary)" />
+            <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+              <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>Sync Diagnostics</span>
+              <span>Fix pending sync issues</span>
+            </div>
+            <ArrowLeft size={16} color="var(--text-tertiary)" style={{ transform: 'rotate(180deg)' }} />
           </div>
         </div>
 

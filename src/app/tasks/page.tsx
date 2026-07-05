@@ -158,17 +158,18 @@ function TasksContent() {
         </button>
       </div>
 
-      {/* Add Button */}
+      {/* Floating Action Button */}
       {selectedDate >= getToday() && (
-        <button
-          className={styles.addBtn}
-          onClick={() => handleOpenForm()}
-          id="add-task-btn"
-          style={{ marginBottom: 'var(--space-4)' }}
-        >
-          <Plus size={20} />
-          <span>Add Task</span>
-        </button>
+        <div className={styles.fabWrapper}>
+          <button
+            className={styles.fabBtn}
+            onClick={() => handleOpenForm()}
+            id="add-task-fab"
+            title="Add Task"
+          >
+            <Plus size={24} />
+          </button>
+        </div>
       )}
 
       {/* Task List */}

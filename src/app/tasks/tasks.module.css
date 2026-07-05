@@ -139,3 +139,42 @@
 .sectionIcon {
   color: var(--accent-primary);
 }
+
+.fabWrapper {
+  position: fixed;
+  bottom: 110px; /* Further up from the bottom nav */
+  right: 0;
+  left: 0;
+  max-width: var(--max-width, 480px);
+  margin: 0 auto;
+  pointer-events: none; /* Let clicks pass through the wrapper */
+  z-index: 50;
+}
+
+.fabBtn {
+  position: absolute;
+  right: 20px;
+  bottom: 0;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background-color: var(--accent-primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  border: none;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  pointer-events: auto; /* Re-enable clicks for the button itself */
+}
+
+.fabBtn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+}
+
+.fabBtn:active {
+  transform: scale(0.95);
+}

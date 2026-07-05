@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import {
-  Car, FileText, Shirt, Archive, Compass, Briefcase, MapPin, List as ListIcon, Lightbulb, BarChart3, Settings, BookOpen, Scissors
+  Car, FileText, Shirt, Archive, Compass, Briefcase, MapPin, List as ListIcon, Lightbulb, BarChart3, Settings, BookOpen, Scissors, Calendar
 } from 'lucide-react';
 import styles from './more.module.css';
 
@@ -18,6 +18,7 @@ const moreMenu = [
   { label: 'Reports & Analytics', icon: BarChart3, href: '/analytics', color: 'var(--accent-secondary)' },
   { label: 'Lists', icon: ListIcon, href: '/lists', color: 'var(--accent-warning)' },
   { label: 'Haircut Tracker', icon: Scissors, href: '/haircuts', color: 'var(--accent-danger)' },
+  { label: 'Important Dates', icon: Calendar, href: '/events', color: 'var(--accent-info)' },
   { label: 'Settings', icon: Settings, href: '/settings', color: 'var(--accent-primary)' },
 ];
 
