@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/features/auth/hooks/useAuth';
-import { getDB, type SyncableTable } from '@/lib/db';
+import { getDB } from '@/lib/db';
 import { createClient } from '@/lib/supabase/client';
-import { tableMap } from '@/lib/sync';
+import { tableMap, type SyncableTable } from '@/lib/sync';
 import { ArrowLeft, RefreshCw, Trash2, CheckCircle, AlertCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import styles from '../settings.module.css';

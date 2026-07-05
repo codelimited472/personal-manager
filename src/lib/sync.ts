@@ -1,7 +1,7 @@
 import { createClient } from '@/lib/supabase/client';
 import { getDB, type SyncStatus } from '@/lib/db';
 
-type SyncableTable = 
+export type SyncableTable = 
   | 'tasks' | 'habits' | 'habitLogs' | 'waterLogs' | 'expenses' 
   | 'captures' | 'notifications' | 'settings'
   | 'vehicles' | 'vehicleIssues' | 'petrolExpenses' 
