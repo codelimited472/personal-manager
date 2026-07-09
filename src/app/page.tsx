@@ -83,7 +83,13 @@ export default function Home() {
         // 7. Fetch settings
         const bTrackerSetting = await db.settings.get('show_billionaire_tracker');
         if (bTrackerSetting) {
-          setShowBillionaireTracker(bTrackerSetting.value === 'true');
+          if (bTrackerSetting.value === 'false') {
+            setShowBillionaireTracker(false); // Keep legacy handling if needed
+          } else if (bTrackerSetting.value === todayStr) {
+            setShowBillionaireTracker(false);
+          } else {
+            setShowBillionaireTracker(true);
+          }
         }
 
       } catch (err) {
@@ -158,10 +164,11 @@ export default function Home() {
   const closeBillionaireTracker = async () => {
     setShowBillionaireTracker(false);
     const db = getDB();
+    const todayStr = new Date().toISOString().split('T')[0];
     await db.settings.put({
       key: 'show_billionaire_tracker',
       user_id: 'local-user', // Should match how settings page saves it
-      value: 'false',
+      value: todayStr,
       _syncStatus: 'pending'
     });
   };

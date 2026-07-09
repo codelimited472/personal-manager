@@ -25,6 +25,11 @@ export default function VehiclesPage() {
   const [selectedVehicleId, setSelectedVehicleId] = useState('');
   const [issueTitle, setIssueTitle] = useState('');
   const [issueDesc, setIssueDesc] = useState('');
+  
+  const [paymentMethods, setPaymentMethods] = useState<string[]>(['Cash', 'Credit Card']);
+  const [expandedIssueId, setExpandedIssueId] = useState<string | null>(null);
+  const [expenseAmount, setExpenseAmount] = useState('');
+  const [expenseMethod, setExpenseMethod] = useState('');
 
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -41,6 +46,19 @@ export default function VehiclesPage() {
         vehicleName: allVehicles.find(v => v.id === i.vehicle_id)?.name || 'Unknown Vehicle',
       }));
       setIssues(issuesWithNames);
+      
+      const storedMethods = await db.settings.get('paymentMethods');
+      if (storedMethods) {
+        try {
+          const parsed = JSON.parse(storedMethods.value);
+          setPaymentMethods(parsed);
+          if (parsed.length > 0 && !expenseMethod) {
+            setExpenseMethod(parsed[0]);
+          }
+        } catch {}
+      } else if (!expenseMethod) {
+        setExpenseMethod('Cash');
+      }
     }
     loadData();
   }, [refreshKey]);
@@ -108,6 +126,13 @@ export default function VehiclesPage() {
     setRefreshKey(prev => prev + 1);
   };
 
+  const deleteIssue = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!(await window.appConfirm('Are you sure you want to delete this issue?'))) return;
+    await deleteRecord('vehicleIssues', id);
+    setRefreshKey(prev => prev + 1);
+  };
+
   const addIssue = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!issueTitle || !selectedVehicleId) return;
@@ -117,7 +142,7 @@ export default function VehiclesPage() {
       vehicle_id: selectedVehicleId,
       title: issueTitle,
       description: issueDesc,
-      status: 'open',
+      status: 'pending',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       _syncStatus: 'pending',
@@ -135,10 +160,43 @@ export default function VehiclesPage() {
     else if (currentStatus === 'resolved') nextStatus = 'open';
 
     await db.vehicleIssues.update(id, {
-      status: nextStatus as 'open' | 'in_progress' | 'resolved',
+      status: currentStatus === 'pending' ? 'resolved' : 'pending',
       updated_at: new Date().toISOString(),
       _syncStatus: 'pending',
     });
+    setRefreshKey(prev => prev + 1);
+  };
+
+  const logIssueExpense = async (issueId: string, vehicleName: string, title: string, currentStatus: string) => {
+    if (!expenseAmount) return;
+    const amountNum = Number(expenseAmount);
+    if (isNaN(amountNum) || amountNum <= 0) return;
+
+    await db.expenses.add({
+      id: crypto.randomUUID(),
+      user_id: 'local-user', // Will sync correctly if user matches
+      amount: amountNum,
+      category: 'Vehicle Maintenance',
+      description: `Fix: ${title} (${vehicleName})`,
+      payment_method: expenseMethod,
+      date: new Date().toISOString().split('T')[0],
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      _syncStatus: 'pending'
+    });
+
+    if (currentStatus === 'pending') {
+      await db.vehicleIssues.update(issueId, {
+        status: 'resolved',
+        expense_amount: amountNum,
+        expense_method: expenseMethod,
+        updated_at: new Date().toISOString(),
+        _syncStatus: 'pending',
+      });
+    }
+
+    setExpandedIssueId(null);
+    setExpenseAmount('');
     setRefreshKey(prev => prev + 1);
   };
 
@@ -308,26 +366,129 @@ export default function VehiclesPage() {
           {/* Issue Logs */}
           <h3 className={styles.sectionHeader}>Active Vehicle Issues</h3>
           <div className={styles.issuesList}>
-            {issues.length === 0 ? (
-              <p className={styles.emptyState}>No logged issues. All vehicles running smoothly! 🚗</p>
+            {issues.filter(i => i.status !== 'resolved').length === 0 ? (
+              <p className={styles.emptyState}>No pending issues. All vehicles running smoothly! 🚗</p>
             ) : (
-              issues.map(iss => (
+              issues.filter(i => i.status !== 'resolved').map(iss => (
+                <div key={iss.id} className={styles.issueItem} style={{ flexDirection: 'column', alignItems: 'stretch' }} onClick={(e) => {
+                  // Only expand if clicking the card, not the resolve button
+                  if ((e.target as HTMLElement).tagName !== 'BUTTON' && (e.target as HTMLElement).tagName !== 'INPUT' && (e.target as HTMLElement).tagName !== 'SELECT') {
+                    setExpandedIssueId(expandedIssueId === iss.id ? null : iss.id);
+                  }
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}>
+                    <div>
+                      <strong className={styles.issueTitle}>{iss.title}</strong>
+                      <span className={styles.issueVehicle}>Vehicle: {iss.vehicleName}</span>
+                      {iss.description && <p className={styles.issueDesc}>{iss.description}</p>}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <button
+                        className={styles.resolveBtn}
+                        style={{
+                          background: 'var(--bg-tertiary)',
+                          color: 'var(--text-secondary)',
+                          cursor: 'default'
+                        }}
+                      >
+                        {iss.status === 'open' ? 'pending' : iss.status}
+                      </button>
+                      <button 
+                        onClick={(e) => deleteIssue(iss.id, e)} 
+                        className={styles.deleteBtn}
+                        style={{ position: 'relative', top: 0, right: 0 }}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </div>
+                  
+                  {expandedIssueId === iss.id && (
+                    <div style={{ marginTop: '15px', paddingTop: '15px', borderTop: '1px solid var(--border-secondary)', display: 'flex', gap: '10px', flexDirection: 'column' }}>
+                      <h4 style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0 }}>Log Repair Expense</h4>
+                      <div style={{ display: 'flex', gap: '10px' }}>
+                        <input
+                          type="number"
+                          placeholder="Cost (₹)"
+                          className={styles.input}
+                          style={{ flex: 1, padding: '8px' }}
+                          value={expenseAmount}
+                          onChange={(e) => setExpenseAmount(e.target.value)}
+                        />
+                        <select 
+                          className={styles.select}
+                          style={{ flex: 1, padding: '8px' }}
+                          value={expenseMethod}
+                          onChange={(e) => setExpenseMethod(e.target.value)}
+                        >
+                          {paymentMethods.map(pm => (
+                            <option key={pm} value={pm}>{pm}</option>
+                          ))}
+                        </select>
+                        <button
+                          onClick={() => logIssueExpense(iss.id, iss.vehicleName || 'Unknown', iss.title, iss.status)}
+                          className={styles.submitBtn}
+                          style={{ padding: '8px 16px', margin: 0, width: 'auto' }}
+                        >
+                          Log Payment
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+          
+          <h3 className={styles.sectionHeader} style={{ marginTop: '30px' }}>Resolved Issues</h3>
+          <div className={styles.issuesList}>
+            {issues.filter(i => i.status === 'resolved').length === 0 ? (
+              <p className={styles.emptyState}>No resolved issues yet.</p>
+            ) : (
+              issues.filter(i => i.status === 'resolved').map(iss => (
                 <div key={iss.id} className={styles.issueItem}>
                   <div>
                     <strong className={styles.issueTitle}>{iss.title}</strong>
                     <span className={styles.issueVehicle}>Vehicle: {iss.vehicleName}</span>
                     {iss.description && <p className={styles.issueDesc}>{iss.description}</p>}
+                    {iss.expense_amount && (
+                      <p className={styles.issueDesc} style={{ color: 'var(--text-primary)', marginTop: '4px' }}>
+                        Paid ₹{iss.expense_amount} via {iss.expense_method}
+                      </p>
+                    )}
                   </div>
-                  <button
-                    onClick={() => resolveIssue(iss.id, iss.status)}
-                    className={styles.resolveBtn}
-                    style={{
-                      background: iss.status === 'resolved' ? 'var(--accent-success-muted)' : 'var(--bg-tertiary)',
-                      color: iss.status === 'resolved' ? 'var(--accent-success)' : 'var(--text-secondary)'
-                    }}
-                  >
-                    {iss.status}
-                  </button>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        resolveIssue(iss.id, iss.status);
+                      }}
+                      className={styles.resolveBtn}
+                      style={{
+                        background: 'var(--bg-tertiary)',
+                        color: 'var(--text-primary)',
+                      }}
+                    >
+                      Reopen
+                    </button>
+                    <button
+                      className={styles.resolveBtn}
+                      style={{
+                        background: 'var(--accent-success-muted)',
+                        color: 'var(--accent-success)',
+                        cursor: 'default'
+                      }}
+                    >
+                      resolved
+                    </button>
+                    <button 
+                      onClick={(e) => deleteIssue(iss.id, e)} 
+                      className={styles.deleteBtn}
+                      style={{ position: 'relative', top: 0, right: 0 }}
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
                 </div>
               ))
             )}

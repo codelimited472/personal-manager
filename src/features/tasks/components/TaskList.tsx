@@ -36,6 +36,8 @@ export default function TaskList({ tasks, emptyMessage = 'No tasks yet', onEditT
     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
       {Object.entries(groupedTasks).map(([category, catTasks]) => {
         const isCollapsed = collapsedCategories[category];
+        const activeCount = catTasks.filter(t => t.status !== 'completed').length;
+        
         return (
         <div key={category}>
           <h4 
@@ -53,7 +55,19 @@ export default function TaskList({ tasks, emptyMessage = 'No tasks yet', onEditT
               userSelect: 'none'
             }}>
             <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent-primary)', opacity: 0.5 }}></span>
-            {category} Tasks
+            <span>{category} Tasks</span>
+            {activeCount > 0 && (
+              <span style={{ 
+                background: 'var(--accent-primary-muted, rgba(0, 122, 255, 0.1))', 
+                color: 'var(--accent-primary, #007aff)', 
+                padding: '2px 8px', 
+                borderRadius: '12px', 
+                fontSize: '0.7rem',
+                fontWeight: 700
+              }}>
+                {activeCount} active
+              </span>
+            )}
             {isCollapsed ? <ChevronRight size={16} /> : <ChevronDown size={16} />}
           </h4>
           {!isCollapsed && (

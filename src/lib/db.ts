@@ -132,7 +132,9 @@ export interface LocalVehicleIssue extends SyncFields {
   vehicle_id: string;
   title: string;
   description?: string;
-  status: 'open' | 'in_progress' | 'resolved';
+  status: 'open' | 'in_progress' | 'resolved' | 'pending';
+  expense_amount?: number;
+  expense_method?: string;
   created_at: string;
   updated_at: string;
 }

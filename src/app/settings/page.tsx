@@ -17,7 +17,8 @@ export default function SettingsPage() {
       const db = getDB();
       const setting = await db.settings.get('show_billionaire_tracker');
       if (setting) {
-        setShowBillionaireTracker(setting.value === 'true');
+        const todayStr = new Date().toISOString().split('T')[0];
+        setShowBillionaireTracker(setting.value !== 'false' && setting.value !== todayStr);
       }
     };
     loadSettings();
@@ -27,10 +28,11 @@ export default function SettingsPage() {
     const newValue = !showBillionaireTracker;
     setShowBillionaireTracker(newValue);
     const db = getDB();
+    const todayStr = new Date().toISOString().split('T')[0];
     await db.settings.put({
       key: 'show_billionaire_tracker',
       user_id: user?.id || 'local-user',
-      value: newValue.toString(),
+      value: newValue ? 'true' : todayStr,
       _syncStatus: 'pending'
     });
   };

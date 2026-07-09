@@ -10,8 +10,10 @@ import styles from './expenses.module.css';
 import pageStyles from '@/app/page.module.css';
 
 export default function ExpensesPage() {
-  const [activeTab, setActiveTab] = useState<'personal' | 'employee' | 'petrol'>('personal');
+  const [activeTab, setActiveTab] = useState<'personal' | 'employee' | 'petrol' | 'analytics'>('personal');
   const db = getDB();
+
+  const [analyticsTimeframe, setAnalyticsTimeframe] = useState<'monthly' | 'yearly'>('monthly');
 
   // Personal Expense State
   const [expenses, setExpenses] = useState<LocalExpense[]>([]);
@@ -343,6 +345,12 @@ export default function ExpensesPage() {
           className={activeTab === 'petrol' ? styles.tabActive : styles.tab}
         >
           <Car size={16} /> Petrol/Fuel
+        </button>
+        <button
+          onClick={() => setActiveTab('analytics')}
+          className={activeTab === 'analytics' ? styles.tabActive : styles.tab}
+        >
+          <TrendingUp size={16} /> Analytics
         </button>
       </div>
 
@@ -685,6 +693,121 @@ export default function ExpensesPage() {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* 4. Analytics tab */}
+      {activeTab === 'analytics' && (
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <h3 className={styles.sectionHeader} style={{ marginBottom: 0 }}>Analytics Overview</h3>
+            <div className={styles.tabBar} style={{ marginBottom: 0, padding: '4px' }}>
+              <button
+                onClick={() => setAnalyticsTimeframe('monthly')}
+                className={analyticsTimeframe === 'monthly' ? styles.tabActive : styles.tab}
+                style={{ padding: '6px 12px', fontSize: '0.85rem' }}
+              >
+                Monthly
+              </button>
+              <button
+                onClick={() => setAnalyticsTimeframe('yearly')}
+                className={analyticsTimeframe === 'yearly' ? styles.tabActive : styles.tab}
+                style={{ padding: '6px 12px', fontSize: '0.85rem' }}
+              >
+                Yearly
+              </button>
+            </div>
+          </div>
+
+          <h4 style={{ marginBottom: '12px', fontSize: '1.05rem', color: 'var(--text-secondary)', fontWeight: 'var(--weight-semibold)' }}>Payment Source Analytics</h4>
+          <div className={styles.listSection} style={{ background: 'var(--bg-secondary)', padding: '24px', borderRadius: 'var(--radius-xl)', border: '1px solid var(--border-primary)', marginBottom: '24px' }}>
+            {(() => {
+              const currentExps = analyticsTimeframe === 'monthly' ? monthlyExpenses : yearlyExpenses;
+              const sourceTotals = currentExps.reduce((acc, exp) => {
+                const s = exp.payment_method || 'Unknown';
+                acc[s] = (acc[s] || 0) + exp.amount;
+                return acc;
+              }, {} as Record<string, number>);
+              
+              const sortedSources = Object.entries(sourceTotals).sort(([, a], [, b]) => b - a);
+              const maxSourceAmt = sortedSources.length > 0 ? sortedSources[0][1] : 0;
+              const totalSourceAmt = sortedSources.reduce((sum, [, a]) => sum + a, 0);
+
+              if (sortedSources.length === 0) {
+                return <p className={styles.emptyState}>No payment sources found for this period.</p>;
+              }
+
+              return (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                  {sortedSources.map(([source, amt]) => (
+                    <div key={source} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.95rem', color: 'var(--text-primary)', fontWeight: 'var(--weight-medium)' }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent-info)' }}></span>
+                          {source}
+                        </span>
+                        <span>₹{amt.toLocaleString()} <span style={{ color: 'var(--text-tertiary)', fontSize: '0.8rem', marginLeft: '4px' }}>({(amt / totalSourceAmt * 100).toFixed(1)}%)</span></span>
+                      </div>
+                      <div style={{ width: '100%', height: '8px', background: 'var(--bg-tertiary)', borderRadius: '4px', overflow: 'hidden' }}>
+                        <div style={{ 
+                          width: `${(amt / maxSourceAmt) * 100}%`, 
+                          height: '100%', 
+                          background: 'var(--accent-info)',
+                          borderRadius: '4px',
+                          transition: 'width 0.5s ease-out'
+                        }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+          </div>
+
+          <h4 style={{ marginBottom: '12px', fontSize: '1.05rem', color: 'var(--text-secondary)', fontWeight: 'var(--weight-semibold)' }}>Category Analytics</h4>
+          <div className={styles.listSection} style={{ background: 'var(--bg-secondary)', padding: '24px', borderRadius: 'var(--radius-xl)', border: '1px solid var(--border-primary)' }}>
+            {(() => {
+              const currentExps = analyticsTimeframe === 'monthly' ? monthlyExpenses : yearlyExpenses;
+              const catTotals = currentExps.reduce((acc, exp) => {
+                const c = exp.category || 'Other';
+                acc[c] = (acc[c] || 0) + exp.amount;
+                return acc;
+              }, {} as Record<string, number>);
+              
+              const sorted = Object.entries(catTotals).sort(([, a], [, b]) => b - a);
+              const maxAmt = sorted.length > 0 ? sorted[0][1] : 0;
+              const totalAmt = sorted.reduce((sum, [, a]) => sum + a, 0);
+
+              if (sorted.length === 0) {
+                return <p className={styles.emptyState}>No expenses found for this period.</p>;
+              }
+
+              return (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                  {sorted.map(([cat, amt]) => (
+                    <div key={cat} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.95rem', color: 'var(--text-primary)', fontWeight: 'var(--weight-medium)' }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent-primary)' }}></span>
+                          {cat}
+                        </span>
+                        <span>₹{amt.toLocaleString()} <span style={{ color: 'var(--text-tertiary)', fontSize: '0.8rem', marginLeft: '4px' }}>({(amt / totalAmt * 100).toFixed(1)}%)</span></span>
+                      </div>
+                      <div style={{ width: '100%', height: '8px', background: 'var(--bg-tertiary)', borderRadius: '4px', overflow: 'hidden' }}>
+                        <div style={{ 
+                          width: `${(amt / maxAmt) * 100}%`, 
+                          height: '100%', 
+                          background: 'var(--accent-primary)',
+                          borderRadius: '4px',
+                          transition: 'width 0.5s ease-out'
+                        }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+          </div>
         </div>
       )}
     </div>
