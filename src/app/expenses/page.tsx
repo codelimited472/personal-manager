@@ -15,6 +15,7 @@ export default function ExpensesPage() {
 
   // Personal Expense State
   const [expenses, setExpenses] = useState<LocalExpense[]>([]);
+  const [personalViewTimeframe, setPersonalViewTimeframe] = useState<'monthly' | 'yearly'>('monthly');
 
   // Employee Expense State
   const [employees, setEmployees] = useState<LocalEmployeeProfile[]>([]);
@@ -32,6 +33,9 @@ export default function ExpensesPage() {
   const [petrolRate, setPetrolRate] = useState('');
   const [petrolLiters, setPetrolLiters] = useState('');
   const [odometer, setOdometer] = useState('');
+  const [petrolPaymentMethod, setPetrolPaymentMethod] = useState('');
+  const [paymentMethods, setPaymentMethods] = useState<string[]>(['Cash', 'Credit Card']);
+
 
   type DisplayFuelLog = {
     id: string;
@@ -54,6 +58,17 @@ export default function ExpensesPage() {
       const list = await db.expenses.toArray();
       list.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
       setExpenses(list);
+
+      const storedMethods = await db.settings.get('paymentMethods');
+      if (storedMethods) {
+        try {
+          const parsed = JSON.parse(storedMethods.value);
+          setPaymentMethods(parsed);
+          if (parsed.length > 0 && !petrolPaymentMethod) setPetrolPaymentMethod(parsed[0]);
+        } catch {}
+      } else if (!petrolPaymentMethod) {
+        setPetrolPaymentMethod('Cash');
+      }
 
       // 2. Employee
       const emps = await db.employeeProfiles.toArray();
@@ -258,6 +273,7 @@ export default function ExpensesPage() {
       user_id: 'local-user',
       amount: finalAmt,
       category: 'Petrol',
+      payment_method: petrolPaymentMethod || 'Cash',
       description: `Fuel for vehicle ${odo > 0 ? `(Odo: ${odo}km)` : ''} - ${finalLtrs.toFixed(2)}L @ ₹${finalRate}/L`,
       date: getToday(),
       created_at: new Date().toISOString(),
@@ -273,19 +289,38 @@ export default function ExpensesPage() {
   };
 
   // Analytics Calculations
+  const todayDateObj = new Date();
   const todayStr = getToday();
   const currentMonthStr = todayStr.substring(0, 7);
   const currentYearStr = todayStr.substring(0, 4);
 
-  const todaySpend = expenses.filter(e => e.date === todayStr).reduce((sum, e) => sum + e.amount, 0);
-  const monthlySpend = expenses.filter(e => e.date.startsWith(currentMonthStr)).reduce((sum, e) => sum + e.amount, 0);
-  const yearlySpend = expenses.filter(e => e.date.startsWith(currentYearStr)).reduce((sum, e) => sum + e.amount, 0);
+  const yesterdayDateObj = new Date();
+  yesterdayDateObj.setDate(yesterdayDateObj.getDate() - 1);
+  const yesterdayStr = `${yesterdayDateObj.getFullYear()}-${String(yesterdayDateObj.getMonth() + 1).padStart(2, '0')}-${String(yesterdayDateObj.getDate()).padStart(2, '0')}`;
 
-  const spendByMethod = expenses.reduce((acc, exp) => {
+  const todaySpend = expenses.filter(e => e.date === todayStr).reduce((sum, e) => sum + e.amount, 0);
+  const yesterdaySpend = expenses.filter(e => e.date === yesterdayStr).reduce((sum, e) => sum + e.amount, 0);
+  
+  const monthlyExpenses = expenses.filter(e => e.date.startsWith(currentMonthStr));
+  const yearlyExpenses = expenses.filter(e => e.date.startsWith(currentYearStr));
+
+  const monthlySpend = monthlyExpenses.reduce((sum, e) => sum + e.amount, 0);
+  const yearlySpend = yearlyExpenses.reduce((sum, e) => sum + e.amount, 0);
+
+  const daysInCurrentMonth = todayDateObj.getDate();
+  const daysInCurrentYear = Math.ceil((todayDateObj.getTime() - new Date(todayDateObj.getFullYear(), 0, 1).getTime()) / 86400000) || 1;
+
+  const avgDailyMonthly = (monthlySpend / daysInCurrentMonth).toFixed(0);
+  const avgDailyYearly = (yearlySpend / daysInCurrentYear).toFixed(0);
+
+  const currentViewExpenses = personalViewTimeframe === 'monthly' ? monthlyExpenses : yearlyExpenses;
+
+  const spendByMethod = currentViewExpenses.reduce((acc, exp) => {
     const method = exp.payment_method || 'Cash / Other';
     acc[method] = (acc[method] || 0) + exp.amount;
     return acc;
   }, {} as Record<string, number>);
+
 
   return (
     <div className="page">
@@ -314,30 +349,71 @@ export default function ExpensesPage() {
       {/* 1. Personal tab */}
       {activeTab === 'personal' && (
         <div>
-          <h3 className={styles.sectionHeader} style={{ marginBottom: '1rem' }}>Expense Overview</h3>
-          <div className={pageStyles.statsGrid}>
-            <div className={pageStyles.statCard}>
-              <div className={pageStyles.statValue}>₹{todaySpend}</div>
-              <div className={pageStyles.statLabel}>Today&apos;s Spend</div>
-            </div>
-            <div className={pageStyles.statCard}>
-              <div className={pageStyles.statValue}>₹{monthlySpend}</div>
-              <div className={pageStyles.statLabel}>Monthly Spend</div>
-            </div>
-            <div className={pageStyles.statCard}>
-              <div className={pageStyles.statValue}>₹{yearlySpend}</div>
-              <div className={pageStyles.statLabel}>Yearly Spend</div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <h3 className={styles.sectionHeader} style={{ marginBottom: 0 }}>Expense Overview</h3>
+            <div className={styles.tabBar} style={{ marginBottom: 0, padding: '4px' }}>
+              <button
+                onClick={() => setPersonalViewTimeframe('monthly')}
+                className={personalViewTimeframe === 'monthly' ? styles.tabActive : styles.tab}
+                style={{ padding: '6px 12px', fontSize: '0.85rem' }}
+              >
+                Monthly
+              </button>
+              <button
+                onClick={() => setPersonalViewTimeframe('yearly')}
+                className={personalViewTimeframe === 'yearly' ? styles.tabActive : styles.tab}
+                style={{ padding: '6px 12px', fontSize: '0.85rem' }}
+              >
+                Yearly
+              </button>
             </div>
           </div>
+          
+          {personalViewTimeframe === 'monthly' ? (
+            <div className={pageStyles.statsGrid}>
+              <div className={pageStyles.statCard}>
+                <div className={pageStyles.statValue}>₹{todaySpend}</div>
+                <div className={pageStyles.statLabel}>Today&apos;s Spend</div>
+              </div>
+              <div className={pageStyles.statCard}>
+                <div className={pageStyles.statValue}>₹{yesterdaySpend}</div>
+                <div className={pageStyles.statLabel}>Yesterday&apos;s Spend</div>
+              </div>
+              <div className={pageStyles.statCard}>
+                <div className={pageStyles.statValue}>₹{avgDailyMonthly}</div>
+                <div className={pageStyles.statLabel}>Avg. Daily (This Month)</div>
+              </div>
+              <div className={pageStyles.statCard}>
+                <div className={pageStyles.statValue}>₹{monthlySpend}</div>
+                <div className={pageStyles.statLabel}>Monthly Spend</div>
+              </div>
+            </div>
+          ) : (
+            <div className={pageStyles.statsGrid}>
+              <div className={pageStyles.statCard}>
+                <div className={pageStyles.statValue}>₹{yearlySpend}</div>
+                <div className={pageStyles.statLabel}>Yearly Spend</div>
+              </div>
+              <div className={pageStyles.statCard}>
+                <div className={pageStyles.statValue}>₹{avgDailyYearly}</div>
+                <div className={pageStyles.statLabel}>Avg. Daily (This Year)</div>
+              </div>
+            </div>
+          )}
 
           {Object.keys(spendByMethod).length > 0 && (
-            <div className={pageStyles.statsGrid} style={{ marginTop: '-1rem' }}>
-              {Object.entries(spendByMethod).map(([method, amount]) => (
-                <div key={method} className={pageStyles.statCard}>
-                  <div className={pageStyles.statValue}>₹{amount}</div>
-                  <div className={pageStyles.statLabel}>{method}</div>
-                </div>
-              ))}
+            <div style={{ marginTop: '1.5rem' }}>
+              <h4 style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginBottom: '0.75rem', fontWeight: 600 }}>
+                Spends by Payment Method ({personalViewTimeframe === 'monthly' ? 'This Month' : 'This Year'})
+              </h4>
+              <div className={pageStyles.statsGrid}>
+                {Object.entries(spendByMethod).map(([method, amount]) => (
+                  <div key={method} className={pageStyles.statCard}>
+                    <div className={pageStyles.statValue}>₹{amount.toFixed(2)}</div>
+                    <div className={pageStyles.statLabel}>{method}</div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
@@ -547,6 +623,18 @@ export default function ExpensesPage() {
                     onChange={(e) => setOdometer(e.target.value)}
                     className={styles.input}
                   />
+                </div>
+                <div className={styles.formGroup}>
+                  <select
+                    value={petrolPaymentMethod}
+                    onChange={(e) => setPetrolPaymentMethod(e.target.value)}
+                    className={styles.input}
+                  >
+                    <option value="" disabled>Select Payment Method</option>
+                    {paymentMethods.map(m => (
+                      <option key={m} value={m}>{m}</option>
+                    ))}
+                  </select>
                 </div>
                 <button type="submit" className={styles.submitBtn}>
                   Log Fuel Card

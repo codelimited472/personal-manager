@@ -45,6 +45,50 @@ export default function EventsPage() {
     if (!user) return;
     const db = getDB();
     const allEvents = await db.events.toArray();
+    
+    const vehicles = await db.vehicles.toArray();
+    vehicles.forEach(v => {
+      if (v.insurance_expiry) {
+        allEvents.push({
+          id: `veh-${v.id}-ins`,
+          user_id: user.id,
+          title: `${v.name} Insurance Expiry`,
+          date: v.insurance_expiry,
+          type: 'reminder',
+          notes: `Insurance expires on ${v.insurance_expiry}`,
+          created_at: v.created_at,
+          updated_at: v.updated_at,
+          _syncStatus: 'pending'
+        });
+      }
+      if (v.pollution_expiry) {
+        allEvents.push({
+          id: `veh-${v.id}-pol`,
+          user_id: user.id,
+          title: `${v.name} Pollution Expiry`,
+          date: v.pollution_expiry,
+          type: 'reminder',
+          notes: `Pollution expires on ${v.pollution_expiry}`,
+          created_at: v.created_at,
+          updated_at: v.updated_at,
+          _syncStatus: 'pending'
+        });
+      }
+      if (v.road_tax_expiry) {
+        allEvents.push({
+          id: `veh-${v.id}-tax`,
+          user_id: user.id,
+          title: `${v.name} Road Tax Expiry`,
+          date: v.road_tax_expiry,
+          type: 'reminder',
+          notes: `Road tax expires on ${v.road_tax_expiry}`,
+          created_at: v.created_at,
+          updated_at: v.updated_at,
+          _syncStatus: 'pending'
+        });
+      }
+    });
+
     setEvents(allEvents);
   };
 
@@ -66,6 +110,9 @@ export default function EventsPage() {
     return events.filter(e => {
       try {
         const originalDate = parseISO(e.date);
+        if (e.id.startsWith('veh-')) {
+          return isSameDay(originalDate, day);
+        }
         // Events happen every year on the same month and day
         return originalDate.getMonth() === day.getMonth() && originalDate.getDate() === day.getDate();
       } catch (err) {
@@ -81,21 +128,25 @@ export default function EventsPage() {
     
     const upcoming = events.map(e => {
       const originalDate = parseISO(e.date);
-      let nextOccurrence = setYear(originalDate, currentYear);
-      
-      // If it has already passed this year, the next occurrence is next year
-      if (isBefore(nextOccurrence, today)) {
-        nextOccurrence = setYear(originalDate, currentYear + 1);
+      let nextOccurrence;
+      let yearsSince = 0;
+
+      if (e.id.startsWith('veh-')) {
+        nextOccurrence = originalDate;
+      } else {
+        nextOccurrence = setYear(originalDate, currentYear);
+        if (isBefore(nextOccurrence, today)) {
+          nextOccurrence = setYear(originalDate, currentYear + 1);
+        }
+        yearsSince = differenceInYears(nextOccurrence, originalDate);
       }
-      
-      const yearsSince = differenceInYears(nextOccurrence, originalDate);
       
       return {
         ...e,
         nextOccurrence,
         yearsSince
       };
-    });
+    }).filter(e => !e.id.startsWith('veh-') || !isBefore(e.nextOccurrence, today));
     
     // Sort by next occurrence date
     return upcoming.sort((a, b) => a.nextOccurrence.getTime() - b.nextOccurrence.getTime());
@@ -211,7 +262,52 @@ export default function EventsPage() {
         </div>
       </div>
 
-      {/* Selected Day / Upcoming Events Section */}
+      {/* Selected Day Events */}
+      {getEventsForDay(selectedDate).length > 0 && (
+        <>
+          <h3 style={{ fontSize: '18px', fontWeight: 600, margin: '20px 0 15px 0', color: 'var(--text-primary)' }}>
+            Events on {format(selectedDate, 'MMM do, yyyy')}
+          </h3>
+          <div className={styles.eventList} style={{ marginBottom: '20px' }}>
+            {getEventsForDay(selectedDate).map((event) => {
+              let ageText = '';
+              if (!event.id.startsWith('veh-')) {
+                const yearsSince = differenceInYears(selectedDate, parseISO(event.date));
+                if (event.type === 'birthday' && yearsSince > 0) ageText = `Turns ${yearsSince}`;
+                if (event.type === 'anniversary' && yearsSince > 0) ageText = `${yearsSince} Years`;
+              }
+
+              return (
+                <div key={event.id} className={styles.eventCard}>
+                  <div className={`
+                    ${styles.eventIcon} 
+                    ${event.type === 'birthday' ? styles.iconBirthday : ''}
+                    ${event.type === 'anniversary' ? styles.iconAnniversary : ''}
+                    ${event.type === 'reminder' ? styles.iconReminder : ''}
+                    ${event.type === 'other' ? styles.iconOther : ''}
+                  `}>
+                    {renderIcon(event.type)}
+                  </div>
+                  
+                  <div className={styles.eventInfo}>
+                    <div className={styles.eventTitle}>{event.title}</div>
+                    <div className={styles.eventMeta}>
+                      <span className={styles.eventDate}>{event.notes || format(parseISO(event.date), 'MMM do, yyyy')}</span>
+                      {ageText && <span className={styles.eventAge}>{ageText}</span>}
+                    </div>
+                  </div>
+
+                  <button className={styles.deleteBtn} onClick={() => handleDelete(event.id)}>
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
+
+      {/* Upcoming Events Section */}
       <h3 style={{ fontSize: '18px', fontWeight: 600, margin: '20px 0 15px 0', color: 'var(--text-primary)' }}>
         Upcoming Events
       </h3>
@@ -263,7 +359,7 @@ export default function EventsPage() {
       </div>
 
       {/* Floating Add Button */}
-      <div className={styles.fabWrapper} style={{ position: 'fixed', bottom: '80px', right: 0, left: 0, maxWidth: 'var(--max-width, 480px)', margin: '0 auto', pointerEvents: 'none', zIndex: 50 }}>
+      <div className={styles.fabWrapper} style={{ position: 'fixed', bottom: '110px', right: 0, left: 0, maxWidth: 'var(--max-width, 480px)', margin: '0 auto', pointerEvents: 'none', zIndex: 50 }}>
         <button className={styles.addBtn} onClick={() => setShowAddForm(true)} style={{ position: 'absolute', right: '20px', bottom: 0, pointerEvents: 'auto' }}>
           <Plus size={24} />
         </button>

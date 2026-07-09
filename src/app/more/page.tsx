@@ -15,7 +15,6 @@ const moreMenu = [
   { label: 'Travel & Packing', icon: Compass, href: '/travel', color: 'var(--accent-secondary)' },
   { label: 'Inventory & Expiries', icon: Archive, href: '/inventory', color: 'var(--accent-success)' },
   { label: 'Places & Restaurants', icon: MapPin, href: '/places', color: 'var(--accent-info)' },
-  { label: 'Reports & Analytics', icon: BarChart3, href: '/analytics', color: 'var(--accent-secondary)' },
   { label: 'Lists', icon: ListIcon, href: '/lists', color: 'var(--accent-warning)' },
   { label: 'Haircut Tracker', icon: Scissors, href: '/haircuts', color: 'var(--accent-danger)' },
   { label: 'Important Dates', icon: Calendar, href: '/events', color: 'var(--accent-info)' },

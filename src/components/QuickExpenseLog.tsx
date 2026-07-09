@@ -39,21 +39,29 @@ export default function QuickExpenseLog({ onExpenseAdded }: Props) {
         const allExpenses = await db.expenses.toArray();
         const catCounts: Record<string, number> = {};
         allExpenses.forEach(e => {
-          catCounts[e.category] = (catCounts[e.category] || 0) + 1;
+          if (e.category) {
+            catCounts[e.category] = (catCounts[e.category] || 0) + 1;
+          }
         });
 
         const storedCats = await db.settings.get('savedCategories');
+        let parsed: string[] = [];
         if (storedCats) {
           try {
-            const parsed = JSON.parse(storedCats.value);
-            parsed.sort((a: string, b: string) => (catCounts[b] || 0) - (catCounts[a] || 0));
-            setSavedCategories(parsed);
+            parsed = JSON.parse(storedCats.value);
           } catch {}
-        } else {
-          const defaultCats = ['Food', 'Transport', 'Shopping', 'Bills'];
-          defaultCats.sort((a: string, b: string) => (catCounts[b] || 0) - (catCounts[a] || 0));
-          setSavedCategories(defaultCats);
         }
+        
+        if (parsed.length === 0) {
+          parsed = ['Food', 'Transport', 'Shopping', 'Bills'];
+        }
+
+        const combinedSet = new Set([...parsed, ...Object.keys(catCounts)]);
+        const finalCats = Array.from(combinedSet);
+        
+        // Sort by frequency (most used first)
+        finalCats.sort((a, b) => (catCounts[b] || 0) - (catCounts[a] || 0));
+        setSavedCategories(finalCats);
       } catch (err) {
         console.error('Error loading settings for QuickExpenseLog:', err);
       }
@@ -177,7 +185,7 @@ export default function QuickExpenseLog({ onExpenseAdded }: Props) {
                   <li 
                     key={cat} 
                     className={styles.qpDropdownItem}
-                    onClick={() => {
+                    onMouseDown={() => {
                       setPayCategory(cat);
                       setShowCatDropdown(false);
                     }}
