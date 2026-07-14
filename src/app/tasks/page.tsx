@@ -84,11 +84,22 @@ function TasksContent() {
     displayTasks = displayTasks.filter(t => t.status !== 'completed');
   }
 
-  // Sort displayTasks: non-completed first, completed at the bottom
+  // Sort displayTasks: non-completed first, completed at the bottom, then by priority
+  const priorityWeight = {
+    urgent: 4,
+    high: 3,
+    medium: 2,
+    low: 1
+  } as const;
+
   displayTasks = [...displayTasks].sort((a, b) => {
     if (a.status === 'completed' && b.status !== 'completed') return 1;
     if (b.status === 'completed' && a.status !== 'completed') return -1;
-    return 0;
+    
+    // Sort by priority for tasks with same completion status
+    const pA = priorityWeight[a.priority as keyof typeof priorityWeight] || 0;
+    const pB = priorityWeight[b.priority as keyof typeof priorityWeight] || 0;
+    return pB - pA;
   });
 
   return (

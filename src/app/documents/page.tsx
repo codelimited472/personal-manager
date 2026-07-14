@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { FileText, Plus, Trash2, Calendar, ShieldCheck } from 'lucide-react';
 import { getDB, type LocalDocument } from '@/lib/db';
+import { deleteRecord } from '@/lib/sync';
 import styles from './documents.module.css';
 
 export default function DocumentsPage() {
@@ -71,10 +72,10 @@ export default function DocumentsPage() {
       .toArray();
       
     for (const n of notificationsToDelete) {
-      await db.notifications.delete(n.id);
+      await deleteRecord('notifications', n.id);
     }
     
-    await db.documents.delete(id);
+    await deleteRecord('documents', id);
     setRefreshKey(prev => prev + 1);
   };
 

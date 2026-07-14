@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { getDB, type LocalEvent } from '@/lib/db';
+import { deleteRecord } from '@/lib/sync';
 import { 
   format, 
   addMonths, 
@@ -29,6 +30,7 @@ export default function EventsPage() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [events, setEvents] = useState<LocalEvent[]>([]);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
   
   // Form state
   const [title, setTitle] = useState('');
@@ -39,7 +41,7 @@ export default function EventsPage() {
   // Load events
   useEffect(() => {
     loadEvents();
-  }, [user]);
+  }, [user, refreshKey]);
 
   const loadEvents = async () => {
     if (!user) return;
@@ -176,18 +178,14 @@ export default function EventsPage() {
     setNotes('');
     setShowAddForm(false);
     
-    loadEvents();
+    setRefreshKey(prev => prev + 1);
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm('Are you sure you want to delete this event?')) return;
-    const db = getDB();
     
-    // Instead of deleting directly, queue for sync deletion in a full app
-    // Here we'll delete locally and queue in local storage if you have that setup
-    // Since this is a simple implementation, we'll just delete locally. In a full offline app, you'd use deleteRecord from sync.ts
-    await db.events.delete(id);
-    loadEvents();
+    await deleteRecord('events', id);
+    setRefreshKey(prev => prev + 1);
   };
 
   const renderIcon = (type: string) => {

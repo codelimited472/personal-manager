@@ -7,9 +7,10 @@ export type SyncableTable =
   | 'vehicles' | 'vehicleIssues' | 'petrolExpenses' 
   | 'employeeProfiles' | 'employeeExpenses' | 'trips' | 'tripExpenses' | 'tripPackingItems'
   | 'places' | 'restaurants' | 'noteFolders' | 'inventoryItems' | 'expiryItems'
-  | 'wardrobeItems' | 'outfits' | 'documents' | 'businessWorkspaces' | 'businessTasks'
+  | 'wardrobeItems' | 'outfits' | 'documents' | 'businessWorkspaces'
   | 'businessNotes' | 'businessIdeas' | 'businessDocuments' | 'businessContacts'
   | 'businessChecklists' | 'businessFuturePlans' | 'businessGoals'
+  | 'businessLinks' | 'businessTimelineEvents' | 'businessChecklistItems'
   | 'notes' | 'ideas' | 'haircuts' | 'appLists' | 'appListItems' | 'events';
 
 // Maps local Dexie table names to Supabase table names
@@ -39,7 +40,6 @@ export const tableMap: Record<SyncableTable, string> = {
   outfits: 'outfits',
   documents: 'documents',
   businessWorkspaces: 'business_workspaces',
-  businessTasks: 'business_tasks',
   businessNotes: 'business_notes',
   businessIdeas: 'business_ideas',
   businessDocuments: 'business_documents',
@@ -47,6 +47,9 @@ export const tableMap: Record<SyncableTable, string> = {
   businessChecklists: 'business_checklists',
   businessFuturePlans: 'business_future_plans',
   businessGoals: 'business_goals',
+  businessLinks: 'business_links',
+  businessTimelineEvents: 'business_timeline_events',
+  businessChecklistItems: 'business_checklist_items',
   notes: 'notes',
   ideas: 'ideas',
   haircuts: 'haircuts',
@@ -138,9 +141,10 @@ export async function pullFromSupabase(
 
   // Tables that don't have user_id directly
   const noUserIdTables = [
-    'vehicleIssues', 'tripExpenses', 'tripPackingItems', 'businessTasks',
+    'vehicleIssues', 'tripExpenses', 'tripPackingItems',
     'businessNotes', 'businessIdeas', 'businessDocuments', 'businessContacts',
-    'businessChecklists', 'businessFuturePlans', 'businessGoals'
+    'businessChecklists', 'businessFuturePlans', 'businessGoals',
+    'businessLinks', 'businessTimelineEvents', 'businessChecklistItems'
   ];
 
   if (!noUserIdTables.includes(tableName)) {
@@ -200,9 +204,10 @@ export async function syncAll(userId: string): Promise<void> {
   // Sync child tables
   const tier2: SyncableTable[] = [
     'habitLogs', 'vehicleIssues', 'petrolExpenses', 'employeeExpenses',
-    'tripExpenses', 'tripPackingItems', 'outfits', 'businessTasks',
+    'tripExpenses', 'tripPackingItems', 'outfits',
     'businessNotes', 'businessIdeas', 'businessDocuments', 'businessContacts', 
     'businessChecklists', 'businessFuturePlans', 'businessGoals',
+    'businessLinks', 'businessTimelineEvents', 'businessChecklistItems',
     'appListItems', 'notes'
   ];
 

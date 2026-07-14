@@ -7,7 +7,7 @@ import {
 import styles from './more.module.css';
 
 const moreMenu = [
-  { label: 'Business Workspaces', icon: Briefcase, href: '/business', color: 'var(--accent-primary)' },
+  { label: 'Businesses and Ideas Workspaces', icon: Briefcase, href: '/business', color: 'var(--accent-primary)' },
   { label: 'Document Vault', icon: FileText, href: '/documents', color: 'var(--accent-info)' },
   { label: 'Wardrobe & Outfits', icon: Shirt, href: '/wardrobe', color: 'var(--accent-danger)' },
   { label: 'Vehicles & Issues', icon: Car, href: '/vehicles', color: 'var(--accent-warning)' },

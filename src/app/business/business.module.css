@@ -435,13 +435,24 @@
   color: white;
 }
 
-.fab {
+.fabWrapper {
   position: fixed;
-  bottom: calc(var(--nav-height) + var(--safe-area-bottom) + 20px);
-  right: var(--space-4);
+  bottom: 110px;
+  right: 0;
+  left: 0;
+  max-width: var(--max-width, 480px);
+  margin: 0 auto;
+  pointer-events: none;
+  z-index: 50;
+}
+
+.fab {
+  position: absolute;
+  right: 20px;
+  bottom: 0;
   width: 56px;
   height: 56px;
-  border-radius: 28px;
+  border-radius: 50%;
   background: var(--accent-primary);
   color: white;
   display: flex;
@@ -449,9 +460,9 @@
   justify-content: center;
   box-shadow: 0 4px 12px rgba(0,0,0,0.2);
   cursor: pointer;
-  z-index: 50;
   border: none;
   transition: transform 0.2s;
+  pointer-events: auto;
 }
 
 .fab:active {

@@ -40,10 +40,14 @@ export default function Home() {
           (t.status === 'completed' && isSameDayLocal(t.completed_at, todayStr))
         );
         
+        const priorityWeight = { urgent: 4, high: 3, medium: 2, low: 1 } as const;
         todayTasks.sort((a, b) => {
           if (a.status === 'completed' && b.status !== 'completed') return 1;
           if (b.status === 'completed' && a.status !== 'completed') return -1;
-          return 0;
+          
+          const pA = priorityWeight[a.priority as keyof typeof priorityWeight] || 0;
+          const pB = priorityWeight[b.priority as keyof typeof priorityWeight] || 0;
+          return pB - pA;
         });
         setTasks(todayTasks);
 
@@ -98,6 +102,21 @@ export default function Home() {
     }
     loadDashboardData();
   }, [refreshKey]);
+
+  // Check for day rollover (midnight) to refresh data and re-show the billionaire tracker
+  useEffect(() => {
+    let currentDayStr = getToday();
+    
+    const interval = setInterval(() => {
+      const newDayStr = getToday();
+      if (newDayStr !== currentDayStr) {
+        currentDayStr = newDayStr;
+        setRefreshKey(prev => prev + 1);
+      }
+    }, 60000); // Check every minute
+    
+    return () => clearInterval(interval);
+  }, []);
 
   // Actions
   const toggleTask = async (id: string, currentStatus: string) => {

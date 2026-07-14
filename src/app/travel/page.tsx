@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Compass, Plus, Trash2, Check, MapPin, Star, DollarSign, ListTodo } from 'lucide-react';
 import { getDB, type LocalTrip, type LocalTripPackingItem, type LocalPlace, type LocalRestaurant } from '@/lib/db';
+import { deleteRecord } from '@/lib/sync';
 import { getToday } from '@/lib/utils';
 import styles from './travel.module.css';
 
@@ -91,7 +92,7 @@ export default function TravelPage() {
 
   const deleteTrip = async (id: string) => {
     if (!(await window.appConfirm('Are you sure you want to delete this item?'))) return;
-    await db.trips.delete(id);
+    await deleteRecord('trips', id);
     setRefreshKey(prev => prev + 1);
   };
 
@@ -117,7 +118,7 @@ export default function TravelPage() {
   };
 
   const togglePacked = async (id: string, currentPacked: boolean) => {
-    await db.tripPackingItems.update(id, { packed: !currentPacked });
+    await db.tripPackingItems.update(id, { packed: !currentPacked, _syncStatus: 'pending' });
     setRefreshKey(prev => prev + 1);
   };
 
@@ -144,7 +145,7 @@ export default function TravelPage() {
   };
 
   const toggleVisitedPlace = async (id: string, currentVisited: boolean) => {
-    await db.places.update(id, { visited: !currentVisited });
+    await db.places.update(id, { visited: !currentVisited, _syncStatus: 'pending' });
     setRefreshKey(prev => prev + 1);
   };
 

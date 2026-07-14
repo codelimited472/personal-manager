@@ -15,6 +15,7 @@ interface SyncFields {
 export interface LocalTask extends SyncFields {
   id: string;
   user_id: string;
+  workspace_id?: string;
   title: string;
   description?: string;
   due_date?: string;
@@ -314,17 +315,38 @@ export interface LocalBusinessWorkspace extends SyncFields {
   id: string;
   user_id: string;
   name: string;
-  type: 'clinic' | 'school' | 'annotation' | 'other';
+  type: string; // 'business', 'idea', etc.
+  description?: string;
+  status?: string;
+  priority?: string;
+  expected_launch?: string;
+  tags?: string[];
+  updated_at?: string;
   created_at: string;
 }
 
-export interface LocalBusinessTask extends SyncFields {
+export interface LocalBusinessLink extends SyncFields {
   id: string;
   workspace_id: string;
   title: string;
-  due_date?: string;
-  priority: 'low' | 'medium' | 'high' | 'critical';
-  status: 'not_started' | 'in_progress' | 'waiting' | 'completed';
+  url: string;
+  created_at: string;
+}
+
+export interface LocalBusinessTimelineEvent extends SyncFields {
+  id: string;
+  workspace_id: string;
+  type: string; // 'created', 'note_added', 'task_completed', 'status_changed', 'edited'
+  description: string;
+  created_at: string;
+}
+
+export interface LocalBusinessChecklistItem extends SyncFields {
+  id: string;
+  workspace_id: string;
+  group_name?: string;
+  content: string;
+  checked: boolean;
   created_at: string;
 }
 
@@ -497,7 +519,6 @@ class PersonalManagerDB extends Dexie {
   outfits!: EntityTable<LocalOutfit, 'id'>;
   documents!: EntityTable<LocalDocument, 'id'>;
   businessWorkspaces!: EntityTable<LocalBusinessWorkspace, 'id'>;
-  businessTasks!: EntityTable<LocalBusinessTask, 'id'>;
   businessChecklists!: EntityTable<LocalBusinessChecklist, 'id'>;
   businessFuturePlans!: EntityTable<LocalBusinessFuturePlan, 'id'>;
   businessGoals!: EntityTable<LocalBusinessGoal, 'id'>;
@@ -505,6 +526,9 @@ class PersonalManagerDB extends Dexie {
   businessIdeas!: EntityTable<LocalBusinessIdea, 'id'>;
   businessDocuments!: EntityTable<LocalBusinessDocument, 'id'>;
   businessContacts!: EntityTable<LocalBusinessContact, 'id'>;
+  businessLinks!: EntityTable<LocalBusinessLink, 'id'>;
+  businessTimelineEvents!: EntityTable<LocalBusinessTimelineEvent, 'id'>;
+  businessChecklistItems!: EntityTable<LocalBusinessChecklistItem, 'id'>;
   notes!: EntityTable<LocalNote, 'id'>;
   ideas!: EntityTable<LocalIdea, 'id'>;
   captures!: EntityTable<LocalCapture, 'id'>;
@@ -604,6 +628,16 @@ class PersonalManagerDB extends Dexie {
 
     this.version(10).stores({
       events: 'id, user_id, date, type, _syncStatus',
+    });
+
+    this.version(11).stores({
+      businessLinks: 'id, workspace_id, _syncStatus',
+      businessTimelineEvents: 'id, workspace_id, type, _syncStatus',
+      businessChecklistItems: 'id, workspace_id, _syncStatus',
+    });
+
+    this.version(12).stores({
+      businessTasks: null,
     });
   }
 }

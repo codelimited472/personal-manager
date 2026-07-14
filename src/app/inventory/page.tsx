@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Archive, Plus, Trash2, Calendar, List as ListIcon, Check, Heart } from 'lucide-react';
 import { getDB, type LocalInventoryItem, type LocalExpiryItem } from '@/lib/db';
+import { deleteRecord } from '@/lib/sync';
 import styles from './inventory.module.css';
 
 export default function InventoryPage() {
@@ -27,14 +28,15 @@ export default function InventoryPage() {
 
   const [refreshKey, setRefreshKey] = useState(0);
 
-  useEffect(() => {
-    async function loadData() {
-      const allItems = await db.inventoryItems.toArray();
-      setItems(allItems);
+  const loadData = async () => {
+    const allItems = await db.inventoryItems.toArray();
+    setItems(allItems);
 
-      const allExpiries = await db.expiryItems.toArray();
-      setExpiries(allExpiries);
-    }
+    const allExpiries = await db.expiryItems.toArray();
+    setExpiries(allExpiries);
+  };
+
+  useEffect(() => {
     loadData();
   }, [refreshKey]);
 
@@ -60,7 +62,7 @@ export default function InventoryPage() {
 
   const deleteInventoryItem = async (id: string) => {
     if (!(await window.appConfirm('Are you sure you want to delete this item?'))) return;
-    await db.inventoryItems.delete(id);
+    await deleteRecord('inventoryItems', id);
     setRefreshKey(prev => prev + 1);
   };
 
@@ -102,7 +104,7 @@ export default function InventoryPage() {
 
   const deleteExpiryItem = async (id: string) => {
     if (!(await window.appConfirm('Are you sure you want to delete this item?'))) return;
-    await db.expiryItems.delete(id);
+    await deleteRecord('expiryItems', id);
     setRefreshKey(prev => prev + 1);
   };
 
