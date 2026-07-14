@@ -6,6 +6,12 @@
   padding: var(--space-1);
   margin-bottom: var(--space-5);
   gap: var(--space-1);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.tabBar::-webkit-scrollbar {
+  display: none;
 }
 
 .tab {
@@ -20,6 +26,8 @@
   font-weight: var(--weight-semibold);
   color: var(--text-secondary);
   transition: all var(--transition-fast);
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 .tabActive {
@@ -35,6 +43,8 @@
   color: var(--text-primary);
   background: var(--bg-tertiary);
   box-shadow: var(--shadow-sm);
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 
 /* Forms */
