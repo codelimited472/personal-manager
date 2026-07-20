@@ -100,19 +100,39 @@ export async function pushPendingChanges(tableName: SyncableTable, userId: strin
       }
 
 
-      const { error } = await supabase
-        .from(supabaseTable)
-        .upsert(data, { onConflict: idField });
+      let currentData = { ...data };
+      let success = false;
+      let attempts = 0;
 
-      if (!error) {
-        // Mark as synced in local DB
-        await (db[tableName] as ReturnType<typeof db.table>).update(record[idField], {
-          _syncStatus: 'synced' as SyncStatus,
-          _lastSyncedAt: new Date().toISOString(),
-        });
-        synced++;
-      } else {
-        console.warn(`[Sync] Push warning for ${tableName}:`, error.message || JSON.stringify(error));
+      while (!success && attempts < 5) {
+        const { error } = await supabase
+          .from(supabaseTable)
+          .upsert(currentData, { onConflict: idField });
+
+        if (!error) {
+          success = true;
+          // Mark as synced in local DB
+          await (db[tableName] as ReturnType<typeof db.table>).update(record[idField], {
+            _syncStatus: 'synced' as SyncStatus,
+            _lastSyncedAt: new Date().toISOString(),
+          });
+          synced++;
+        } else if (error.code === 'PGRST204') {
+          // Extract column name: "Could not find the 'workspace_id' column of 'tasks' in the schema cache"
+          const match = error.message.match(/Could not find the '([^']+)' column/);
+          if (match && match[1]) {
+            const badCol = match[1];
+            console.warn(`[Sync] Stripping unknown column '${badCol}' from ${tableName}`);
+            delete currentData[badCol];
+            attempts++;
+          } else {
+            console.warn(`[Sync] Push warning for ${tableName}:`, error.message);
+            break;
+          }
+        } else {
+          console.warn(`[Sync] Push warning for ${tableName}:`, error.message || JSON.stringify(error));
+          break;
+        }
       }
     } catch (err) {
       console.error(`Failed to sync ${tableName} record:`, err);
