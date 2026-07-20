@@ -90,7 +90,7 @@ export default function WorkspaceDetailPage() {
   const handleToggleTask = async (task: LocalTask) => {
     const newStatus = task.status === 'completed' ? 'pending' : 'completed';
     await db.tasks.update(task.id, { 
-      status: newStatus as any,
+      status: newStatus as 'pending' | 'in_progress' | 'completed' | 'cancelled',
       updated_at: new Date().toISOString(),
       completed_at: newStatus === 'completed' ? new Date().toISOString() : undefined,
       _syncStatus: 'pending'
@@ -336,7 +336,7 @@ export default function WorkspaceDetailPage() {
           <TaskForm 
             onClose={() => setShowTaskForm(false)} 
             onCreated={() => setRefreshKey(k => k + 1)}
-            initialData={editingTask || { category: workspace.name } as any} 
+            initialData={editingTask || { category: workspace.name } as unknown as LocalTask} 
           />
         </>
       )}

@@ -109,7 +109,7 @@ export default function EventsPage() {
 
               <div className={styles.formGroup}>
                 <label className={styles.label}>Event Type</label>
-                <select className={styles.select} value={type} onChange={(e) => setType(e.target.value as any)}>
+                <select className={styles.select} value={type} onChange={(e) => setType(e.target.value as 'birthday' | 'anniversary' | 'reminder' | 'other')}>
                   <option value="birthday">Birthday</option>
                   <option value="anniversary">Anniversary</option>
                   <option value="reminder">Annual Reminder</option>

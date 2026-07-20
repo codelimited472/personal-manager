@@ -34,7 +34,8 @@ export default function SyncDebugPage() {
         const supabaseTable = tableMap[table];
         const idField = table === 'settings' ? 'key' : 'id';
 
-        for (const record of pending) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        for (const record of pending as any[]) {
           const { _syncStatus, _lastSyncedAt, ...data } = record;
           if (data.user_id === 'local-user') {
             data.user_id = user.id;
@@ -84,7 +85,8 @@ export default function SyncDebugPage() {
         .equals('pending')
         .toArray();
 
-      for (const record of pending) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      for (const record of pending as any[]) {
         const idField = table === 'settings' ? 'key' : 'id';
         await (db[table] as ReturnType<typeof db.table>).update(record[idField], {
           _syncStatus: 'synced',
@@ -113,7 +115,8 @@ export default function SyncDebugPage() {
         .equals('pending')
         .toArray();
 
-      for (const record of pending) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      for (const record of pending as any[]) {
         const idField = table === 'settings' ? 'key' : 'id';
         await (db[table] as ReturnType<typeof db.table>).delete(record[idField]);
         deletedCount++;

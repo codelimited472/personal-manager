@@ -28,17 +28,16 @@ export default function InventoryPage() {
 
   const [refreshKey, setRefreshKey] = useState(0);
 
-  const loadData = async () => {
-    const allItems = await db.inventoryItems.toArray();
-    setItems(allItems);
-
-    const allExpiries = await db.expiryItems.toArray();
-    setExpiries(allExpiries);
-  };
-
   useEffect(() => {
-    loadData();
-  }, [refreshKey]);
+    const fetchData = async () => {
+      const allItems = await db.inventoryItems.toArray();
+      setItems(allItems);
+
+      const allExpiries = await db.expiryItems.toArray();
+      setExpiries(allExpiries);
+    };
+    fetchData();
+  }, [refreshKey, db]);
 
   const addInventoryItem = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -138,7 +138,7 @@ export async function pullFromSupabase(
     .from(supabaseTable)
     .select('*')
     .order('created_at', { ascending: false })
-    .limit(500);
+    .limit(10000);
 
   // Tables that don't have user_id directly
   const noUserIdTables = [
