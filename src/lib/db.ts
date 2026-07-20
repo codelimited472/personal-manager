@@ -124,6 +124,8 @@ export interface LocalVehicle extends SyncFields {
   warranty_info?: string;
   road_tax_expiry?: string;
   color?: string;
+  last_oil_change_date?: string;
+  last_oil_change_mileage?: string;
   created_at: string;
   updated_at: string;
 }
@@ -203,7 +205,8 @@ export interface LocalEvent extends SyncFields {
   id: string;
   user_id: string;
   title: string;
-  date: string; // Original date YYYY-MM-DD
+  date: string; // Event date (Month and Day are used)
+  original_date?: string; // Optional original date for age calculation
   type: 'birthday' | 'anniversary' | 'reminder' | 'other';
   notes?: string;
   created_at: string;
@@ -562,7 +565,7 @@ class PersonalManagerDB extends Dexie {
       employeeProfiles: 'id, user_id, name, _syncStatus',
       employeeExpenses: 'id, user_id, employee_id, date, status, _syncStatus',
       petrolExpenses: 'id, user_id, vehicle_id, date, _syncStatus',
-      vehicles: 'id, user_id, name, registration_number, insurance_expiry, pollution_expiry, road_tax_expiry, _syncStatus',
+      vehicles: 'id, user_id, name, registration_number, insurance_expiry, pollution_expiry, road_tax_expiry, last_oil_change_date, last_oil_change_mileage, _syncStatus',
       vehicleIssues: 'id, vehicle_id, status, _syncStatus',
       trips: 'id, user_id, start_date, end_date, _syncStatus',
       tripExpenses: 'id, trip_id, category, date, _syncStatus',
@@ -627,7 +630,7 @@ class PersonalManagerDB extends Dexie {
     });
 
     this.version(10).stores({
-      events: 'id, user_id, date, type, _syncStatus',
+      events: 'id, user_id, date, original_date, type, _syncStatus',
     });
 
     this.version(11).stores({

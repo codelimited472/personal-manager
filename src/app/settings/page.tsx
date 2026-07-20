@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { useTheme } from '@/hooks/useTheme';
-import { LogOut, User as UserIcon, Mail, Shield, Moon, Sun, Crown, RefreshCw, ArrowLeft } from 'lucide-react';
+import { LogOut, User as UserIcon, Mail, Shield, Moon, Sun, Crown, RefreshCw, ArrowLeft, Calendar as CalendarIcon } from 'lucide-react';
 import { getDB } from '@/lib/db';
 import styles from './settings.module.css';
 
@@ -11,6 +11,7 @@ export default function SettingsPage() {
   const { user, loading, signOut } = useAuth();
   const { theme, toggleTheme } = useTheme();
   const [showBillionaireTracker, setShowBillionaireTracker] = useState(true);
+  const [showHomeCalendar, setShowHomeCalendar] = useState(false);
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -19,6 +20,10 @@ export default function SettingsPage() {
       if (setting) {
         const todayStr = new Date().toISOString().split('T')[0];
         setShowBillionaireTracker(setting.value !== 'false' && setting.value !== todayStr);
+      }
+      const calendarSetting = await db.settings.get('show_home_calendar');
+      if (calendarSetting) {
+        setShowHomeCalendar(calendarSetting.value === 'true');
       }
     };
     loadSettings();
@@ -33,6 +38,18 @@ export default function SettingsPage() {
       key: 'show_billionaire_tracker',
       user_id: user?.id || 'local-user',
       value: newValue ? 'true' : todayStr,
+      _syncStatus: 'pending'
+    });
+  };
+
+  const toggleHomeCalendar = async () => {
+    const newValue = !showHomeCalendar;
+    setShowHomeCalendar(newValue);
+    const db = getDB();
+    await db.settings.put({
+      key: 'show_home_calendar',
+      user_id: user?.id || 'local-user',
+      value: newValue ? 'true' : 'false',
       _syncStatus: 'pending'
     });
   };
@@ -148,6 +165,34 @@ export default function SettingsPage() {
               }} />
             </div>
           </div>
+
+          <div className={styles.actionButton} onClick={toggleHomeCalendar}>
+            <CalendarIcon size={18} color="var(--text-secondary)" />
+            <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+              <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>Home Calendar</span>
+              <span>{showHomeCalendar ? 'Enabled' : 'Disabled'}</span>
+            </div>
+            <div style={{
+              width: '40px',
+              height: '22px',
+              borderRadius: '11px',
+              background: showHomeCalendar ? 'var(--accent-primary)' : 'var(--border-secondary)',
+              position: 'relative',
+              transition: 'background 0.3s ease'
+            }}>
+              <div style={{
+                width: '18px',
+                height: '18px',
+                borderRadius: '50%',
+                background: 'white',
+                position: 'absolute',
+                top: '2px',
+                left: showHomeCalendar ? '20px' : '2px',
+                transition: 'left 0.3s ease'
+              }} />
+            </div>
+          </div>
+
           <div className={styles.actionButton} onClick={() => window.location.href = '/settings/sync-debug'}>
             <RefreshCw size={18} color="var(--text-secondary)" />
             <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>

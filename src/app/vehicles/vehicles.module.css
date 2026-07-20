@@ -63,12 +63,19 @@
 .formGroup {
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .formGroupRow {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: var(--space-3);
+}
+
+@media (max-width: 480px) {
+  .formGroupRow {
+    grid-template-columns: 1fr;
+  }
 }
 
 .label {
@@ -87,6 +94,7 @@
   font-size: var(--text-base);
   color: var(--text-primary);
   width: 100%;
+  min-width: 0;
 }
 
 .submitBtn {

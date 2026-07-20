@@ -401,7 +401,9 @@ textarea::placeholder {
 
 .page {
   padding: var(--space-4);
-  min-height: calc(100dvh - var(--header-height) - var(--nav-height) - var(--safe-area-bottom));
+  height: calc(100dvh - var(--header-height) - var(--nav-height) - var(--safe-area-bottom));
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .page-header {

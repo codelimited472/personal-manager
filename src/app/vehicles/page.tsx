@@ -18,6 +18,8 @@ export default function VehiclesPage() {
   const [polExpiry, setPolExpiry] = useState('');
   const [rcDetails, setRcDetails] = useState('');
   const [color, setColor] = useState('');
+  const [oilDate, setOilDate] = useState('');
+  const [oilMileage, setOilMileage] = useState('');
   const [editingVehicleId, setEditingVehicleId] = useState<string | null>(null);
 
   // Issues
@@ -75,6 +77,8 @@ export default function VehiclesPage() {
         pollution_expiry: polExpiry || undefined,
         rc_details: rcDetails || undefined,
         color: color || undefined,
+        last_oil_change_date: oilDate || undefined,
+        last_oil_change_mileage: oilMileage || undefined,
         updated_at: new Date().toISOString(),
         _syncStatus: 'pending',
       });
@@ -89,6 +93,8 @@ export default function VehiclesPage() {
         pollution_expiry: polExpiry || undefined,
         rc_details: rcDetails || undefined,
         color: color || undefined,
+        last_oil_change_date: oilDate || undefined,
+        last_oil_change_mileage: oilMileage || undefined,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         _syncStatus: 'pending',
@@ -106,6 +112,8 @@ export default function VehiclesPage() {
     setPolExpiry('');
     setRcDetails('');
     setColor('');
+    setOilDate('');
+    setOilMileage('');
     setEditingVehicleId(null);
   };
 
@@ -116,6 +124,8 @@ export default function VehiclesPage() {
     setPolExpiry(v.pollution_expiry || '');
     setRcDetails(v.rc_details || '');
     setColor(v.color || '');
+    setOilDate(v.last_oil_change_date || '');
+    setOilMileage(v.last_oil_change_mileage || '');
     setEditingVehicleId(v.id);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -249,7 +259,7 @@ export default function VehiclesPage() {
               />
             </div>
             <div className={styles.formGroupRow}>
-              <div>
+              <div className={styles.formGroup}>
                 <label className={styles.label}>Insurance Expiry</label>
                 <input
                   type="date"
@@ -258,7 +268,7 @@ export default function VehiclesPage() {
                   className={styles.input}
                 />
               </div>
-              <div>
+              <div className={styles.formGroup}>
                 <label className={styles.label}>Pollution Expiry</label>
                 <input
                   type="date"
@@ -276,6 +286,29 @@ export default function VehiclesPage() {
                 onChange={(e) => setRcDetails(e.target.value)}
                 className={styles.input}
               />
+            </div>
+            
+            <h4 className={styles.formTitle} style={{ marginTop: '10px' }}>Engine Oil</h4>
+            <div className={styles.formGroupRow}>
+              <div className={styles.formGroup}>
+                <label className={styles.label}>Last Changed On</label>
+                <input
+                  type="date"
+                  value={oilDate}
+                  onChange={(e) => setOilDate(e.target.value)}
+                  className={styles.input}
+                />
+              </div>
+              <div className={styles.formGroup}>
+                <label className={styles.label}>Mileage (km)</label>
+                <input
+                  type="number"
+                  placeholder="e.g. 15000"
+                  value={oilMileage}
+                  onChange={(e) => setOilMileage(e.target.value)}
+                  className={styles.input}
+                />
+              </div>
             </div>
             <div className={styles.formActions}>
               <button type="submit" className={styles.submitBtn}>
@@ -303,6 +336,7 @@ export default function VehiclesPage() {
                     <div className={styles.expiryDetails}>
                       {v.insurance_expiry && <span>Insurance Expiry: {v.insurance_expiry}</span>}
                       {v.pollution_expiry && <span>Pollution Expiry: {v.pollution_expiry}</span>}
+                      {v.last_oil_change_date && <span>Last Oil Change: {v.last_oil_change_date} {v.last_oil_change_mileage && `(${v.last_oil_change_mileage} km)`}</span>}
                     </div>
                   </div>
                   <div className={styles.actionButtons}>

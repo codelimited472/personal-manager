@@ -9,6 +9,7 @@ import { getDB, type LocalTask, type LocalHabit, type LocalHabitLog, type LocalW
 import { getToday, isSameDayLocal } from '@/lib/utils';
 import QuickExpenseLog from '@/components/QuickExpenseLog';
 import BillionaireTracker from '@/components/BillionaireTracker';
+import EventsWidget from '@/components/EventsWidget';
 import styles from './page.module.css';
 
 export default function Home() {
@@ -21,6 +22,7 @@ export default function Home() {
   const [ideas, setIdeas] = useState<unknown[]>([]);
   const [notifications, setNotifications] = useState<LocalNotification[]>([]);
   const [showBillionaireTracker, setShowBillionaireTracker] = useState(true);
+  const [showCalendar, setShowCalendar] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
   const waterTarget = 2000; // ml
@@ -94,6 +96,13 @@ export default function Home() {
           } else {
             setShowBillionaireTracker(true);
           }
+        }
+        
+        const calendarSetting = await db.settings.get('show_home_calendar');
+        if (calendarSetting && calendarSetting.value === 'true') {
+          setShowCalendar(true);
+        } else {
+          setShowCalendar(false);
         }
 
       } catch (err) {
@@ -260,6 +269,15 @@ export default function Home() {
           )}
         </div>
       </div>
+      
+      {/* Calendar Widget */}
+      {showCalendar && (
+        <div className={styles.section}>
+          <div className={`${styles.listCard} ${styles.scrollableListCard}`}>
+            <EventsWidget refreshKey={refreshKey} readOnly={true} />
+          </div>
+        </div>
+      )}
 
       {/* Quick Stats Grid (Pushed Down) */}
       <div className={styles.statsGrid}>

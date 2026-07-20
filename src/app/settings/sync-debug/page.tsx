@@ -1,18 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useAuth } from '@/features/auth/hooks/useAuth';
 import { getDB } from '@/lib/db';
 import { createClient } from '@/lib/supabase/client';
 import { tableMap, type SyncableTable } from '@/lib/sync';
-import { ArrowLeft, RefreshCw, Trash2, CheckCircle, AlertCircle } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { RefreshCw, Trash2, CheckCircle, AlertCircle } from 'lucide-react';
 import styles from '../settings.module.css';
 
 export default function SyncDebugPage() {
-  const router = useRouter();
   const { user } = useAuth();
-  const [logs, setLogs] = useState<{table: string; recordId: string; error: string; data: any}[]>([]);
+  const [logs, setLogs] = useState<{table: string; recordId: string; error: string; data: Record<string, unknown>}[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isFixing, setIsFixing] = useState(false);
 
@@ -24,10 +22,10 @@ export default function SyncDebugPage() {
     const db = getDB();
     const supabase = createClient();
     const tables = Object.keys(tableMap) as SyncableTable[];
-    const newLogs: any[] = [];
+    const newLogs: {table: string; recordId: string; error: string; data: Record<string, unknown>}[] = [];
 
     for (const table of tables) {
-      const pending = await (db[table] as any)
+      const pending = await (db[table] as ReturnType<typeof db.table>)
         .where('_syncStatus')
         .equals('pending')
         .toArray();
@@ -41,6 +39,7 @@ export default function SyncDebugPage() {
           if (data.user_id === 'local-user') {
             data.user_id = user.id;
           }
+
 
           if (record[idField] !== 'local-user') {
             // Attempt a dry run or actual push to catch the exact error
@@ -57,7 +56,7 @@ export default function SyncDebugPage() {
               });
             } else {
               // If it actually succeeded, mark as synced
-              await (db[table] as any).update(record[idField], {
+              await (db[table] as ReturnType<typeof db.table>).update(record[idField], {
                 _syncStatus: 'synced',
                 _lastSyncedAt: new Date().toISOString(),
               });
@@ -80,14 +79,14 @@ export default function SyncDebugPage() {
     let fixedCount = 0;
 
     for (const table of tables) {
-      const pending = await (db[table] as any)
+      const pending = await (db[table] as ReturnType<typeof db.table>)
         .where('_syncStatus')
         .equals('pending')
         .toArray();
 
       for (const record of pending) {
         const idField = table === 'settings' ? 'key' : 'id';
-        await (db[table] as any).update(record[idField], {
+        await (db[table] as ReturnType<typeof db.table>).update(record[idField], {
           _syncStatus: 'synced',
           _lastSyncedAt: new Date().toISOString(),
         });
@@ -109,14 +108,14 @@ export default function SyncDebugPage() {
     let deletedCount = 0;
 
     for (const table of tables) {
-      const pending = await (db[table] as any)
+      const pending = await (db[table] as ReturnType<typeof db.table>)
         .where('_syncStatus')
         .equals('pending')
         .toArray();
 
       for (const record of pending) {
         const idField = table === 'settings' ? 'key' : 'id';
-        await (db[table] as any).delete(record[idField]);
+        await (db[table] as ReturnType<typeof db.table>).delete(record[idField]);
         deletedCount++;
       }
     }
@@ -130,7 +129,7 @@ export default function SyncDebugPage() {
     <div className="page" style={{ padding: '20px', overflowY: 'auto' }}>
       <div className={styles.section}>
         <p style={{ color: 'var(--text-secondary)', marginBottom: '20px' }}>
-          Use this tool to find out why items are stuck in "pending" status and aren't syncing across your devices.
+          Use this tool to find out why items are stuck in &quot;pending&quot; status and aren&apos;t syncing across your devices.
         </p>
 
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '20px' }}>
@@ -187,7 +186,7 @@ export default function SyncDebugPage() {
 
         {logs.length === 0 && !isAnalyzing && (
           <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-secondary)' }}>
-            No errors currently found. Click "Analyze" to check Supabase rejection reasons.
+            No errors currently found. Click &quot;Analyze&quot; to check Supabase rejection reasons.
           </div>
         )}
       </div>

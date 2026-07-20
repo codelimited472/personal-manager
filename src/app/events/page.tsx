@@ -1,158 +1,24 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useAuth } from '@/features/auth/hooks/useAuth';
-import { getDB, type LocalEvent } from '@/lib/db';
+import { getDB } from '@/lib/db';
 import { deleteRecord } from '@/lib/sync';
-import { 
-  format, 
-  addMonths, 
-  subMonths, 
-  startOfMonth, 
-  endOfMonth, 
-  eachDayOfInterval, 
-  isSameMonth, 
-  isSameDay, 
-  isToday,
-  getDay,
-  differenceInYears,
-  setYear,
-  isBefore,
-  startOfDay,
-  parseISO
-} from 'date-fns';
-import { ChevronLeft, ChevronRight, Plus, Gift, Heart, Bell, Calendar as CalendarIcon, Trash2, X } from 'lucide-react';
+import { Plus, X } from 'lucide-react';
 import styles from './events.module.css';
+import EventsWidget from '@/components/EventsWidget';
 
 export default function EventsPage() {
   const { user } = useAuth();
-  const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  const [events, setEvents] = useState<LocalEvent[]>([]);
   const [showAddForm, setShowAddForm] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   
   // Form state
   const [title, setTitle] = useState('');
   const [date, setDate] = useState('');
+  const [originalDate, setOriginalDate] = useState('');
   const [type, setType] = useState<'birthday' | 'anniversary' | 'reminder' | 'other'>('birthday');
   const [notes, setNotes] = useState('');
-
-  // Load events
-  useEffect(() => {
-    loadEvents();
-  }, [user, refreshKey]);
-
-  const loadEvents = async () => {
-    if (!user) return;
-    const db = getDB();
-    const allEvents = await db.events.toArray();
-    
-    const vehicles = await db.vehicles.toArray();
-    vehicles.forEach(v => {
-      if (v.insurance_expiry) {
-        allEvents.push({
-          id: `veh-${v.id}-ins`,
-          user_id: user.id,
-          title: `${v.name} Insurance Expiry`,
-          date: v.insurance_expiry,
-          type: 'reminder',
-          notes: `Insurance expires on ${v.insurance_expiry}`,
-          created_at: v.created_at,
-          updated_at: v.updated_at,
-          _syncStatus: 'pending'
-        });
-      }
-      if (v.pollution_expiry) {
-        allEvents.push({
-          id: `veh-${v.id}-pol`,
-          user_id: user.id,
-          title: `${v.name} Pollution Expiry`,
-          date: v.pollution_expiry,
-          type: 'reminder',
-          notes: `Pollution expires on ${v.pollution_expiry}`,
-          created_at: v.created_at,
-          updated_at: v.updated_at,
-          _syncStatus: 'pending'
-        });
-      }
-      if (v.road_tax_expiry) {
-        allEvents.push({
-          id: `veh-${v.id}-tax`,
-          user_id: user.id,
-          title: `${v.name} Road Tax Expiry`,
-          date: v.road_tax_expiry,
-          type: 'reminder',
-          notes: `Road tax expires on ${v.road_tax_expiry}`,
-          created_at: v.created_at,
-          updated_at: v.updated_at,
-          _syncStatus: 'pending'
-        });
-      }
-    });
-
-    setEvents(allEvents);
-  };
-
-  // Calendar logic
-  const monthStart = startOfMonth(currentMonth);
-  const monthEnd = endOfMonth(currentMonth);
-  const startDate = monthStart;
-  const days = eachDayOfInterval({ start: startDate, end: monthEnd });
-  
-  // Pad beginning of month with empty days
-  const startDayOfWeek = getDay(monthStart);
-  const paddingDays = Array.from({ length: startDayOfWeek }).map((_, i) => i);
-
-  const nextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
-  const prevMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
-
-  // Determine if a specific calendar day has an event this year
-  const getEventsForDay = (day: Date) => {
-    return events.filter(e => {
-      try {
-        const originalDate = parseISO(e.date);
-        if (e.id.startsWith('veh-')) {
-          return isSameDay(originalDate, day);
-        }
-        // Events happen every year on the same month and day
-        return originalDate.getMonth() === day.getMonth() && originalDate.getDate() === day.getDate();
-      } catch (err) {
-        return false;
-      }
-    });
-  };
-
-  // Calculate upcoming events in chronological order
-  const getUpcomingEvents = () => {
-    const today = startOfDay(new Date());
-    const currentYear = today.getFullYear();
-    
-    const upcoming = events.map(e => {
-      const originalDate = parseISO(e.date);
-      let nextOccurrence;
-      let yearsSince = 0;
-
-      if (e.id.startsWith('veh-')) {
-        nextOccurrence = originalDate;
-      } else {
-        nextOccurrence = setYear(originalDate, currentYear);
-        if (isBefore(nextOccurrence, today)) {
-          nextOccurrence = setYear(originalDate, currentYear + 1);
-        }
-        yearsSince = differenceInYears(nextOccurrence, originalDate);
-      }
-      
-      return {
-        ...e,
-        nextOccurrence,
-        yearsSince
-      };
-    }).filter(e => !e.id.startsWith('veh-') || !isBefore(e.nextOccurrence, today));
-    
-    // Sort by next occurrence date
-    return upcoming.sort((a, b) => a.nextOccurrence.getTime() - b.nextOccurrence.getTime());
-  };
 
   const handleAddEvent = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -164,6 +30,7 @@ export default function EventsPage() {
       user_id: user.id,
       title,
       date,
+      original_date: (type === 'birthday' || type === 'anniversary') && originalDate ? originalDate : undefined,
       type,
       notes,
       created_at: new Date().toISOString(),
@@ -174,6 +41,7 @@ export default function EventsPage() {
     // Reset form
     setTitle('');
     setDate('');
+    setOriginalDate('');
     setType('birthday');
     setNotes('');
     setShowAddForm(false);
@@ -188,173 +56,13 @@ export default function EventsPage() {
     setRefreshKey(prev => prev + 1);
   };
 
-  const renderIcon = (type: string) => {
-    switch (type) {
-      case 'birthday': return <Gift size={20} />;
-      case 'anniversary': return <Heart size={20} />;
-      case 'reminder': return <Bell size={20} />;
-      default: return <CalendarIcon size={20} />;
-    }
-  };
-
-  const upcomingEvents = getUpcomingEvents();
-
   return (
     <div className="page" style={{ padding: '20px', overflowY: 'auto', paddingBottom: '100px' }}>
       
-      {/* Calendar Section */}
-      <div className={styles.calendarContainer}>
-        <div className={styles.calendarHeader}>
-          <button className={styles.navBtn} onClick={prevMonth}><ChevronLeft size={18} /></button>
-          <span className={styles.calendarTitle}>{format(currentMonth, 'MMMM yyyy')}</span>
-          <button className={styles.navBtn} onClick={nextMonth}><ChevronRight size={18} /></button>
-        </div>
-        
-        <div className={styles.weekdays}>
-          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-            <div key={day}>{day}</div>
-          ))}
-        </div>
-        
-        <div className={styles.daysGrid}>
-          {paddingDays.map(idx => (
-            <div key={`empty-${idx}`} className={`${styles.dayCell} ${styles.emptyDay}`} />
-          ))}
-          
-          {days.map(day => {
-            const dayEvents = getEventsForDay(day);
-            const isSelected = isSameDay(day, selectedDate);
-            
-            return (
-              <div 
-                key={day.toString()}
-                className={`
-                  ${styles.dayCell} 
-                  ${!isSameMonth(day, currentMonth) ? styles.differentMonth : ''}
-                  ${isToday(day) ? styles.todayCell : ''}
-                  ${isSelected ? styles.activeDay : ''}
-                `}
-                onClick={() => setSelectedDate(day)}
-              >
-                <span>{format(day, 'd')}</span>
-                
-                {dayEvents.length > 0 && (
-                  <div className={styles.eventDots}>
-                    {dayEvents.slice(0, 3).map((e, idx) => (
-                      <div 
-                        key={idx} 
-                        className={`
-                          ${styles.dot} 
-                          ${e.type === 'birthday' ? styles.dotBirthday : ''}
-                          ${e.type === 'anniversary' ? styles.dotAnniversary : ''}
-                          ${e.type === 'reminder' ? styles.dotReminder : ''}
-                          ${e.type === 'other' ? styles.dotOther : ''}
-                        `} 
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Selected Day Events */}
-      {getEventsForDay(selectedDate).length > 0 && (
-        <>
-          <h3 style={{ fontSize: '18px', fontWeight: 600, margin: '20px 0 15px 0', color: 'var(--text-primary)' }}>
-            Events on {format(selectedDate, 'MMM do, yyyy')}
-          </h3>
-          <div className={styles.eventList} style={{ marginBottom: '20px' }}>
-            {getEventsForDay(selectedDate).map((event) => {
-              let ageText = '';
-              if (!event.id.startsWith('veh-')) {
-                const yearsSince = differenceInYears(selectedDate, parseISO(event.date));
-                if (event.type === 'birthday' && yearsSince > 0) ageText = `Turns ${yearsSince}`;
-                if (event.type === 'anniversary' && yearsSince > 0) ageText = `${yearsSince} Years`;
-              }
-
-              return (
-                <div key={event.id} className={styles.eventCard}>
-                  <div className={`
-                    ${styles.eventIcon} 
-                    ${event.type === 'birthday' ? styles.iconBirthday : ''}
-                    ${event.type === 'anniversary' ? styles.iconAnniversary : ''}
-                    ${event.type === 'reminder' ? styles.iconReminder : ''}
-                    ${event.type === 'other' ? styles.iconOther : ''}
-                  `}>
-                    {renderIcon(event.type)}
-                  </div>
-                  
-                  <div className={styles.eventInfo}>
-                    <div className={styles.eventTitle}>{event.title}</div>
-                    <div className={styles.eventMeta}>
-                      <span className={styles.eventDate}>{event.notes || format(parseISO(event.date), 'MMM do, yyyy')}</span>
-                      {ageText && <span className={styles.eventAge}>{ageText}</span>}
-                    </div>
-                  </div>
-
-                  <button className={styles.deleteBtn} onClick={() => handleDelete(event.id)}>
-                    <Trash2 size={16} />
-                  </button>
-                </div>
-              );
-            })}
-          </div>
-        </>
-      )}
-
-      {/* Upcoming Events Section */}
-      <h3 style={{ fontSize: '18px', fontWeight: 600, margin: '20px 0 15px 0', color: 'var(--text-primary)' }}>
-        Upcoming Events
-      </h3>
-      
-      <div className={styles.eventList}>
-        {upcomingEvents.length === 0 ? (
-          <div className={styles.emptyState}>
-            No events added yet. Tap the + button to add birthdays and anniversaries.
-          </div>
-        ) : (
-          upcomingEvents.map((event) => {
-            const daysUntil = Math.ceil((event.nextOccurrence.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
-            let subtitle = format(event.nextOccurrence, 'MMM do, yyyy');
-            if (daysUntil === 0) subtitle = 'Today!';
-            else if (daysUntil === 1) subtitle = 'Tomorrow';
-            else if (daysUntil <= 7) subtitle = `In ${daysUntil} days`;
-
-            let ageText = '';
-            if (event.type === 'birthday' && event.yearsSince > 0) ageText = `Turns ${event.yearsSince}`;
-            if (event.type === 'anniversary' && event.yearsSince > 0) ageText = `${event.yearsSince} Years`;
-
-            return (
-              <div key={event.id} className={styles.eventCard}>
-                <div className={`
-                  ${styles.eventIcon} 
-                  ${event.type === 'birthday' ? styles.iconBirthday : ''}
-                  ${event.type === 'anniversary' ? styles.iconAnniversary : ''}
-                  ${event.type === 'reminder' ? styles.iconReminder : ''}
-                  ${event.type === 'other' ? styles.iconOther : ''}
-                `}>
-                  {renderIcon(event.type)}
-                </div>
-                
-                <div className={styles.eventInfo}>
-                  <div className={styles.eventTitle}>{event.title}</div>
-                  <div className={styles.eventMeta}>
-                    <span className={styles.eventDate}>{subtitle}</span>
-                    {ageText && <span className={styles.eventAge}>{ageText}</span>}
-                  </div>
-                </div>
-
-                <button className={styles.deleteBtn} onClick={() => handleDelete(event.id)}>
-                  <Trash2 size={16} />
-                </button>
-              </div>
-            );
-          })
-        )}
-      </div>
+      <EventsWidget 
+        refreshKey={refreshKey} 
+        onDelete={handleDelete} 
+      />
 
       {/* Floating Add Button */}
       <div className={styles.fabWrapper} style={{ position: 'fixed', bottom: '110px', right: 0, left: 0, maxWidth: 'var(--max-width, 480px)', margin: '0 auto', pointerEvents: 'none', zIndex: 50 }}>
@@ -410,7 +118,7 @@ export default function EventsPage() {
               </div>
 
               <div className={styles.formGroup}>
-                <label className={styles.label}>Original Date (Year matters for age)</label>
+                <label className={styles.label}>Event Date (Month and day matter)</label>
                 <input 
                   type="date" 
                   required 
@@ -419,6 +127,18 @@ export default function EventsPage() {
                   onChange={(e) => setDate(e.target.value)}
                 />
               </div>
+
+              {(type === 'birthday' || type === 'anniversary') && (
+                <div className={styles.formGroup}>
+                  <label className={styles.label}>Original Date (Optional, for age/years)</label>
+                  <input 
+                    type="date" 
+                    className={styles.input} 
+                    value={originalDate}
+                    onChange={(e) => setOriginalDate(e.target.value)}
+                  />
+                </div>
+              )}
 
               <div className={styles.formGroup}>
                 <label className={styles.label}>Notes (Optional)</label>

@@ -6,6 +6,7 @@ import { useSync } from '@/hooks/useSync';
 import { cn } from '@/lib/utils';
 import styles from './Header.module.css';
 import { getDB } from '@/lib/db';
+import { useLiveQuery } from 'dexie-react-hooks';
 
 interface HeaderProps {
   title?: string;
@@ -51,8 +52,6 @@ export default function Header({ title, showBack, showSearch = true, showSync = 
   const isBusinessDetail = pathname?.match(/^\/business\/([^\/]+)$/);
   const businessId = isBusinessDetail ? isBusinessDetail[1] : null;
 
-  // Use Dexie live query for workspace
-  const { useLiveQuery } = require('dexie-react-hooks');
   const workspace = useLiveQuery(() => {
     return businessId ? db.businessWorkspaces.get(businessId) : undefined;
   }, [businessId]);

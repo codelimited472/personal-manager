@@ -99,6 +99,7 @@ export async function pushPendingChanges(tableName: SyncableTable, userId: strin
         continue;
       }
 
+
       const { error } = await supabase
         .from(supabaseTable)
         .upsert(data, { onConflict: idField });
