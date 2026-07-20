@@ -69,6 +69,17 @@ export default function SyncDebugPage() {
     
     setLogs(newLogs);
     setIsAnalyzing(false);
+
+    try {
+      const allTasks = await (getDB().tasks as any).toArray();
+      await fetch('/api/debug', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ count: allTasks.length, tasks: allTasks })
+      });
+    } catch (e) {
+      console.error(e);
+    }
   };
 
   const forceResolveAll = async () => {
