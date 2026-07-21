@@ -391,11 +391,14 @@ input[type="month"].input {
   border-radius: var(--radius-2xl) var(--radius-2xl) 0 0;
   z-index: var(--z-modal);
   max-height: 90dvh;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
   animation: slideUp 0.35s cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 .bottom-sheet-handle {
+  flex-shrink: 0;
   display: flex;
   justify-content: center;
   padding: var(--space-3) 0 var(--space-1);
@@ -410,9 +413,11 @@ input[type="month"].input {
 }
 
 .bottom-sheet-content {
-  padding: var(--space-2) var(--space-5) calc(var(--space-5) + var(--safe-area-bottom));
+  flex: 1;
+  padding: var(--space-2) var(--space-5) calc(var(--space-8) + var(--safe-area-bottom));
   overflow-y: auto;
-  max-height: calc(90dvh - 40px);
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* ============================================
