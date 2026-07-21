@@ -197,8 +197,9 @@ export async function pullFromSupabase(
 
   // If this is a full sync (no lastSyncedAt), remove local records that were deleted on another device
   if (!lastSyncedAt) {
-    const localIds = new Set((await (db[tableName] as ReturnType<typeof db.table>).toArray()).map(r => r[idField]));
-    const remoteIds = new Set(data.map(r => r[idField]));
+    const idField = tableName === 'settings' ? 'key' : 'id';
+    const localIds = new Set((await (db[tableName] as ReturnType<typeof db.table>).toArray()).map((r: any) => r[idField]));
+    const remoteIds = new Set(data.map((r: any) => r[idField]));
     
     // Find records that exist locally but not remotely
     const toDelete = [...localIds].filter(id => !remoteIds.has(id));
@@ -207,8 +208,8 @@ export async function pullFromSupabase(
       // Only delete local records if they are already 'synced' (don't delete 'pending' offline creations)
       const localRecordsFull = await (db[tableName] as ReturnType<typeof db.table>).toArray();
       const safeToDelete = localRecordsFull
-        .filter(r => toDelete.includes(r[idField]) && r._syncStatus === 'synced')
-        .map(r => r[idField]);
+        .filter((r: any) => toDelete.includes(r[idField]) && r._syncStatus === 'synced')
+        .map((r: any) => r[idField]);
 
       if (safeToDelete.length > 0) {
         console.log(`[Sync] Removing ${safeToDelete.length} records from ${tableName} that were deleted remotely`);
