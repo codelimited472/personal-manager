@@ -120,7 +120,29 @@ export default function TaskForm({ onClose, onCreated, initialData }: TaskFormPr
 
           {/* Due Date */}
           <div className="input-group">
-            <label className="input-label">Due Date</label>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-2)' }}>
+              <label className="input-label" style={{ marginBottom: 0 }}>Due Date</label>
+              {form.due_date && (
+                <button
+                  type="button"
+                  onClick={() => setForm({ ...form, due_date: '' })}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: 'var(--text-tertiary)',
+                    fontSize: '0.75rem',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    padding: '2px 6px',
+                    borderRadius: '4px'
+                  }}
+                >
+                  <X size={12} /> Clear
+                </button>
+              )}
+            </div>
             <input
               className="input"
               type="date"
