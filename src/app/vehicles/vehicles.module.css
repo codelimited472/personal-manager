@@ -96,6 +96,7 @@
   width: 100%;
   min-width: 0;
   max-width: 100%;
+  min-height: 44px;
   box-sizing: border-box;
   -webkit-appearance: none;
   appearance: none;
