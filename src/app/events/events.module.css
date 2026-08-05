@@ -245,6 +245,14 @@
   color: var(--text-primary);
   font-size: var(--text-sm);
   outline: none;
+  box-sizing: border-box;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.input[type="date"] {
+  min-height: 48px;
+  display: block;
 }
 
 .input:focus {
@@ -260,6 +268,9 @@
   color: var(--text-primary);
   font-size: var(--text-sm);
   outline: none;
+  box-sizing: border-box;
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 .select:focus {
