@@ -66,6 +66,13 @@
   gap: var(--space-3);
 }
 
+@media (max-width: 480px) {
+  .formRow {
+    flex-direction: column;
+    gap: 0;
+  }
+}
+
 .input {
   background: var(--bg-primary);
   border: 1px solid var(--border-primary);

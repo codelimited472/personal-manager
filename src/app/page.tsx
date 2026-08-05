@@ -10,6 +10,7 @@ import { getToday, isSameDayLocal } from '@/lib/utils';
 import QuickExpenseLog from '@/components/QuickExpenseLog';
 import BillionaireTracker from '@/components/BillionaireTracker';
 import EventsWidget from '@/components/EventsWidget';
+import { Skeleton } from '@/components/ui/Skeleton';
 import styles from './page.module.css';
 
 export default function Home() {
@@ -24,11 +25,13 @@ export default function Home() {
   const [showBillionaireTracker, setShowBillionaireTracker] = useState(true);
   const [showCalendar, setShowCalendar] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
 
   const waterTarget = 2000; // ml
 
   useEffect(() => {
     async function loadDashboardData() {
+      setIsLoading(true);
       try {
         const db = getDB();
         const todayStr = getToday();
@@ -107,6 +110,8 @@ export default function Home() {
 
       } catch (err) {
         console.error('Error loading dashboard data:', err);
+      } finally {
+        setIsLoading(false);
       }
     }
     loadDashboardData();
@@ -239,7 +244,13 @@ export default function Home() {
           </button>
         </div>
         <div className={`${styles.listCard} ${styles.scrollableListCard}`}>
-          {tasks.length === 0 ? (
+          {isLoading ? (
+            <>
+              <Skeleton height="40px" className={styles.listItem} />
+              <Skeleton height="40px" className={styles.listItem} />
+              <Skeleton height="40px" className={styles.listItem} />
+            </>
+          ) : tasks.length === 0 ? (
             <div className={styles.emptyState}>No pending tasks today! 🎉</div>
           ) : (
             tasks.map(task => (
@@ -281,27 +292,37 @@ export default function Home() {
 
       {/* Quick Stats Grid (Pushed Down) */}
       <div className={styles.statsGrid}>
-        <div className={styles.statCard}>
-          <Droplet className={styles.statIconWater} />
-          <div className={styles.statValue}>{waterAmount}ml</div>
-          <div className={styles.statLabel}>Water Intake</div>
-        </div>
-        <div 
-          className={styles.statCard} 
-          onClick={() => router.push('/expenses')}
-          style={{ cursor: 'pointer' }}
-        >
-          <Wallet className={styles.statIconExpense} />
-          <div className={styles.statValue}>
-            ₹{todaySpend.toFixed(0)}
-          </div>
-          <div className={styles.statLabel}>Today&apos;s Spend</div>
-        </div>
-        <div className={styles.statCard}>
-          <CheckSquare className={styles.statIconTasks} />
-          <div className={styles.statValue}>{pendingTasksCount}</div>
-          <div className={styles.statLabel}>Pending Tasks</div>
-        </div>
+        {isLoading ? (
+          <>
+            <Skeleton height="100px" borderRadius="var(--radius-xl)" />
+            <Skeleton height="100px" borderRadius="var(--radius-xl)" />
+            <Skeleton height="100px" borderRadius="var(--radius-xl)" />
+          </>
+        ) : (
+          <>
+            <div className={styles.statCard}>
+              <Droplet className={styles.statIconWater} />
+              <div className={styles.statValue}>{waterAmount}ml</div>
+              <div className={styles.statLabel}>Water Intake</div>
+            </div>
+            <div 
+              className={styles.statCard} 
+              onClick={() => router.push('/expenses')}
+              style={{ cursor: 'pointer' }}
+            >
+              <Wallet className={styles.statIconExpense} />
+              <div className={styles.statValue}>
+                ₹{todaySpend.toFixed(0)}
+              </div>
+              <div className={styles.statLabel}>Today&apos;s Spend</div>
+            </div>
+            <div className={styles.statCard}>
+              <CheckSquare className={styles.statIconTasks} />
+              <div className={styles.statValue}>{pendingTasksCount}</div>
+              <div className={styles.statLabel}>Pending Tasks</div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Habits Section */}
@@ -315,7 +336,13 @@ export default function Home() {
           </button>
         </div>
         <div className={styles.listCard}>
-          {habits.length === 0 ? (
+          {isLoading ? (
+            <>
+              <Skeleton height="40px" className={styles.listItem} />
+              <Skeleton height="40px" className={styles.listItem} />
+              <Skeleton height="40px" className={styles.listItem} />
+            </>
+          ) : habits.length === 0 ? (
             <div className={styles.emptyState}>Create a habit to build consistency!</div>
           ) : (
             habits.map(habit => (

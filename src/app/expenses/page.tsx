@@ -6,6 +6,7 @@ import { getDB, type LocalExpense, type LocalEmployeeProfile, type LocalEmployee
 import { getToday } from '@/lib/utils';
 import QuickExpenseLog from '@/components/QuickExpenseLog';
 import { deleteRecord } from '@/lib/sync';
+import { Skeleton } from '@/components/ui/Skeleton';
 import styles from './expenses.module.css';
 import pageStyles from '@/app/page.module.css';
 
@@ -53,9 +54,12 @@ export default function ExpensesPage() {
   const [petrolLogs, setPetrolLogs] = useState<DisplayFuelLog[]>([]);
 
   const [refreshKey, setRefreshKey] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     async function loadData() {
+      setIsLoading(true);
+      try {
       // 1. Personal
       const list = await db.expenses.toArray();
       list.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
@@ -116,6 +120,11 @@ export default function ExpensesPage() {
       ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
       setPetrolLogs(mergedLogs);
+      } catch (err) {
+        console.error('Error loading expenses:', err);
+      } finally {
+        setIsLoading(false);
+      }
     }
     loadData();
   }, [refreshKey]);
@@ -429,7 +438,13 @@ export default function ExpensesPage() {
 
           <div className={styles.listSection}>
             <h3 className={styles.sectionHeader}>Expense Log</h3>
-            {expenses.length === 0 ? (
+            {isLoading ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+                <Skeleton height="60px" borderRadius="var(--radius-md)" />
+                <Skeleton height="60px" borderRadius="var(--radius-md)" />
+                <Skeleton height="60px" borderRadius="var(--radius-md)" />
+              </div>
+            ) : expenses.length === 0 ? (
               <p className={styles.emptyState}>No expenses logged yet.</p>
             ) : (
               Object.entries(
@@ -540,7 +555,12 @@ export default function ExpensesPage() {
           {/* Claim Logs */}
           <div className={styles.listSection}>
             <h3 className={styles.sectionHeader}>Claims & Approvals</h3>
-            {empExpenses.length === 0 ? (
+            {isLoading ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+                <Skeleton height="60px" borderRadius="var(--radius-md)" />
+                <Skeleton height="60px" borderRadius="var(--radius-md)" />
+              </div>
+            ) : empExpenses.length === 0 ? (
               <p className={styles.emptyState}>No employee claims logged.</p>
             ) : (
               empExpenses.map(claim => (
@@ -652,7 +672,12 @@ export default function ExpensesPage() {
               {/* Logs */}
               <div className={styles.listSection}>
                 <h3 className={styles.sectionHeader}>Fuel Logs</h3>
-                {petrolLogs.length === 0 ? (
+                {isLoading ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+                    <Skeleton height="60px" borderRadius="var(--radius-md)" />
+                    <Skeleton height="60px" borderRadius="var(--radius-md)" />
+                  </div>
+                ) : petrolLogs.length === 0 ? (
                   <p className={styles.emptyState}>No fuel logs recorded yet.</p>
                 ) : (
                   petrolLogs.map(log => (

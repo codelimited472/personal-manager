@@ -7,6 +7,7 @@ import TaskList from '@/features/tasks/components/TaskList';
 import TaskForm from '@/features/tasks/components/TaskForm';
 import { Plus, Calendar as CalendarIcon, Eye, EyeOff } from 'lucide-react';
 import { getToday, addDays, format } from '@/lib/utils';
+import { Skeleton } from '@/components/ui/Skeleton';
 import styles from './tasks.module.css';
 
 function TasksContent() {
@@ -32,7 +33,7 @@ function TasksContent() {
     setHideCompletedTasks(newValue);
     localStorage.setItem('hideCompletedTasks', String(newValue));
   };
-  const { tasks, todayTasks, stats } = useTasks({ date: selectedDate });
+  const { tasks, todayTasks, stats, isLoading } = useTasks({ date: selectedDate });
 
   // Generate 15 days (7 days before, today, 7 days after)
   useEffect(() => {
@@ -126,20 +127,30 @@ function TasksContent() {
 
       {/* Stats */}
       <div className={styles.stats}>
-        <div className={styles.statItem}>
-          <span className={styles.statValue}>{stats.pending}</span>
-          <span className={styles.statLabel}>Pending</span>
-        </div>
-        <div className={styles.statItem}>
-          <span className={styles.statValue}>{stats.completed}</span>
-          <span className={styles.statLabel}>Done</span>
-        </div>
-        <div className={styles.statItem}>
-          <span className={`${styles.statValue} ${stats.overdue > 0 ? styles.statDanger : ''}`}>
-            {stats.overdue}
-          </span>
-          <span className={styles.statLabel}>Overdue</span>
-        </div>
+        {isLoading ? (
+          <>
+            <Skeleton height="70px" borderRadius="var(--radius-xl)" className={styles.statItem} />
+            <Skeleton height="70px" borderRadius="var(--radius-xl)" className={styles.statItem} />
+            <Skeleton height="70px" borderRadius="var(--radius-xl)" className={styles.statItem} />
+          </>
+        ) : (
+          <>
+            <div className={styles.statItem}>
+              <span className={styles.statValue}>{stats.pending}</span>
+              <span className={styles.statLabel}>Pending</span>
+            </div>
+            <div className={styles.statItem}>
+              <span className={styles.statValue}>{stats.completed}</span>
+              <span className={styles.statLabel}>Done</span>
+            </div>
+            <div className={styles.statItem}>
+              <span className={`${styles.statValue} ${stats.overdue > 0 ? styles.statDanger : ''}`}>
+                {stats.overdue}
+              </span>
+              <span className={styles.statLabel}>Overdue</span>
+            </div>
+          </>
+        )}
       </div>
 
       <div className={styles.sectionHeader} style={{ marginTop: '0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -185,11 +196,20 @@ function TasksContent() {
 
       {/* Task List */}
       <div className={styles.taskList} style={{ marginBottom: 'var(--space-4)', marginTop: 'var(--space-2)' }}>
-        <TaskList 
-          tasks={displayTasks} 
-          emptyMessage={`No tasks found for ${selectedDate === getToday() ? 'today' : selectedDate}`} 
-          onEditTask={handleOpenForm}
-        />
+        {isLoading ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+            <Skeleton height="60px" borderRadius="var(--radius-lg)" />
+            <Skeleton height="60px" borderRadius="var(--radius-lg)" />
+            <Skeleton height="60px" borderRadius="var(--radius-lg)" />
+            <Skeleton height="60px" borderRadius="var(--radius-lg)" />
+          </div>
+        ) : (
+          <TaskList 
+            tasks={displayTasks} 
+            emptyMessage={`No tasks found for ${selectedDate === getToday() ? 'today' : selectedDate}`} 
+            onEditTask={handleOpenForm}
+          />
+        )}
       </div>
 
       {/* Upcoming Tasks Section has been removed as per the requirement to only show tasks up till the current day */}

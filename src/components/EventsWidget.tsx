@@ -21,6 +21,7 @@ import {
   parseISO
 } from 'date-fns';
 import { ChevronLeft, ChevronRight, Gift, Heart, Bell, Calendar as CalendarIcon, Trash2, ChevronUp, ChevronDown } from 'lucide-react';
+import { Skeleton } from '@/components/ui/Skeleton';
 import styles from '@/app/events/events.module.css';
 
 interface EventsWidgetProps {
@@ -36,12 +37,18 @@ export default function EventsWidget({ refreshKey = 0, readOnly = false, onDelet
   const [events, setEvents] = useState<LocalEvent[]>([]);
   const [filterType, setFilterType] = useState<'monthly' | 'yearly'>('monthly');
   const [showUpcoming, setShowUpcoming] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Load events
   useEffect(() => {
     async function loadEvents() {
-      if (!user) return;
-      const db = getDB();
+      setIsLoading(true);
+      if (!user) {
+        setIsLoading(false);
+        return;
+      }
+      try {
+        const db = getDB();
       const allEvents = await db.events.toArray();
       
       const vehicles = await db.vehicles.toArray();
@@ -105,6 +112,11 @@ export default function EventsWidget({ refreshKey = 0, readOnly = false, onDelet
       });
   
       setEvents(allEvents);
+      } catch (err) {
+        console.error('Error loading events:', err);
+      } finally {
+        setIsLoading(false);
+      }
     }
     loadEvents();
   }, [user, refreshKey]);
@@ -326,7 +338,13 @@ export default function EventsWidget({ refreshKey = 0, readOnly = false, onDelet
       
       {showUpcoming && (
         <div className={styles.eventList}>
-          {upcomingEvents.filter(e => filterType === 'yearly' || (isSameMonth(e.nextOccurrence, currentMonth) && e.nextOccurrence.getFullYear() === currentMonth.getFullYear())).length === 0 ? (
+          {isLoading ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
+              <Skeleton height="70px" borderRadius="var(--radius-xl)" />
+              <Skeleton height="70px" borderRadius="var(--radius-xl)" />
+              <Skeleton height="70px" borderRadius="var(--radius-xl)" />
+            </div>
+          ) : upcomingEvents.filter(e => filterType === 'yearly' || (isSameMonth(e.nextOccurrence, currentMonth) && e.nextOccurrence.getFullYear() === currentMonth.getFullYear())).length === 0 ? (
             <div className={styles.emptyState}>
               No events found for this filter.
             </div>

@@ -80,9 +80,12 @@ export default function EventsPage() {
             background: 'var(--bg-primary)', 
             width: '100%', 
             maxWidth: '480px', 
+            maxHeight: '90vh',
+            overflowY: 'auto',
             borderTopLeftRadius: '24px', 
             borderTopRightRadius: '24px', 
             padding: '24px', 
+            paddingBottom: 'max(24px, env(safe-area-inset-bottom))',
             position: 'relative', 
             zIndex: 101,
             animation: 'slideUp 0.3s ease-out forwards'

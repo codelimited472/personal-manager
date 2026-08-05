@@ -57,13 +57,15 @@ export function useHabits() {
 
       return result;
     },
-    [userId, today],
-    [] as HabitWithStatus[]
+    [userId, today]
   );
 
-  const completionRate = habits.length > 0
-    ? Math.round((habits.filter(h => h.completedToday).length / habits.length) * 100)
+  const isLoading = habits === undefined;
+  const safeHabits = habits || [];
+
+  const completionRate = safeHabits.length > 0
+    ? Math.round((safeHabits.filter(h => h.completedToday).length / safeHabits.length) * 100)
     : 0;
 
-  return { habits, completionRate };
+  return { habits: safeHabits, completionRate, isLoading };
 }

@@ -92,8 +92,7 @@ export function useTasks(filter?: {
         return 0;
       });
     },
-    [userId, filter?.status, filter?.date, filter?.category],
-    [] as Task[]
+    [userId, filter?.status, filter?.date, filter?.category]
   );
 
   const todayTasks = useLiveQuery(
@@ -113,8 +112,7 @@ export function useTasks(filter?: {
         )
         .toArray();
     },
-    [userId],
-    [] as Task[]
+    [userId]
   );
 
   const stats = useLiveQuery(
@@ -167,8 +165,7 @@ export function useTasks(filter?: {
         };
       }
     },
-    [userId],
-    { total: 0, completed: 0, pending: 0, overdue: 0 }
+    [userId]
   );
 
   const upcomingTasks = useLiveQuery(
@@ -185,9 +182,16 @@ export function useTasks(filter?: {
         )
         .toArray();
     },
-    [userId],
-    [] as Task[]
+    [userId]
   );
 
-  return { tasks, todayTasks, upcomingTasks, stats };
+  const isLoading = tasks === undefined || stats === undefined;
+
+  return { 
+    tasks: tasks || [], 
+    todayTasks: todayTasks || [], 
+    upcomingTasks: upcomingTasks || [], 
+    stats: stats || { total: 0, completed: 0, pending: 0, overdue: 0 },
+    isLoading 
+  };
 }

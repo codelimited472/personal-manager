@@ -8,6 +8,7 @@ import { toggleHabitLog, createHabit, deleteHabit } from '@/features/habits/serv
 import { useToast } from '@/components/ui/Toast';
 import { getToday } from '@/lib/utils';
 import { Plus, Flame, X, Check, Trash2, Target } from 'lucide-react';
+import { Skeleton } from '@/components/ui/Skeleton';
 import type { HabitFormData, HabitFrequency } from '@/features/habits/types';
 import styles from './habits.module.css';
 
@@ -18,7 +19,7 @@ const HABIT_COLORS = [
 function HabitsContent() {
   const searchParams = useSearchParams();
   const { user } = useAuth();
-  const { habits, completionRate } = useHabits();
+  const { habits, completionRate, isLoading } = useHabits();
   const { showToast } = useToast();
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState<HabitFormData>({
@@ -87,7 +88,14 @@ function HabitsContent() {
 
       {/* Habit list */}
       <div className={styles.habitList}>
-        {habits.length === 0 ? (
+        {isLoading ? (
+          <>
+            <Skeleton height="70px" borderRadius="var(--radius-xl)" />
+            <Skeleton height="70px" borderRadius="var(--radius-xl)" />
+            <Skeleton height="70px" borderRadius="var(--radius-xl)" />
+            <Skeleton height="70px" borderRadius="var(--radius-xl)" />
+          </>
+        ) : habits.length === 0 ? (
           <div className="empty-state">
             <Target className="empty-state-icon" />
             <h3 className="empty-state-title">No habits yet</h3>
