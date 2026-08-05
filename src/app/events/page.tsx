@@ -85,7 +85,7 @@ export default function EventsPage() {
             borderTopLeftRadius: '24px', 
             borderTopRightRadius: '24px', 
             padding: '24px', 
-            paddingBottom: 'calc(env(safe-area-inset-bottom) + 60px)',
+            paddingBottom: 'calc(env(safe-area-inset-bottom) + 120px)',
             position: 'relative', 
             zIndex: 101,
             animation: 'slideUp 0.3s ease-out forwards'
