@@ -46,16 +46,16 @@ export default function SearchPage() {
           icon: CheckSquare,
         }));
 
-        // 2. Habits
-        const habits = await db.habits
-          .filter(h => h.name.toLowerCase().includes(lowercaseQuery) || (h.description?.toLowerCase().includes(lowercaseQuery) ?? false))
+        // 2. Daily Activities
+        const activities = await db.dailyActivities
+          .filter(a => a.title.toLowerCase().includes(lowercaseQuery) || (a.description?.toLowerCase().includes(lowercaseQuery) ?? false))
           .toArray();
-        habits.forEach(h => list.push({
-          id: h.id,
-          type: 'Habit',
-          title: h.name,
-          subtitle: `Frequency: ${h.frequency}`,
-          link: '/habits',
+        activities.forEach(a => list.push({
+          id: a.id,
+          type: 'Daily Tracker',
+          title: a.title,
+          subtitle: `${a.date} | ${a.start_time} - ${a.end_time}`,
+          link: '/daily-tracker',
           icon: Compass,
         }));
 

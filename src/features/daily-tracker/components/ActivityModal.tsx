@@ -183,7 +183,7 @@ export function ActivityModal({
                   className={`w-10 h-10 rounded-full flex items-center justify-center transition-transform ${
                     formData.color === color ? 'ring-4 ring-offset-2 dark:ring-offset-gray-900 scale-110' : 'hover:scale-110'
                   }`}
-                  style={{ backgroundColor: color, ringColor: `${color}80` }}
+                  style={{ backgroundColor: color, '--tw-ring-color': `${color}80` } as React.CSSProperties}
                 />
               ))}
             </div>

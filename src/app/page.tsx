@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import {
   CheckSquare, Square, Compass, CheckCircle2, Droplet, Calendar, AlertTriangle, Wallet, Lightbulb, Car, Briefcase, Plus, RefreshCw, X
 } from 'lucide-react';
-import { getDB, type LocalTask, type LocalHabit, type LocalHabitLog, type LocalWaterLog, type LocalExpense, type LocalNotification } from '@/lib/db';
+import { getDB, type LocalTask, type LocalWaterLog, type LocalExpense, type LocalNotification } from '@/lib/db';
 import { getToday, isSameDayLocal } from '@/lib/utils';
 import QuickExpenseLog from '@/components/QuickExpenseLog';
 import BillionaireTracker from '@/components/BillionaireTracker';
@@ -17,7 +17,6 @@ export default function Home() {
   const router = useRouter();
   const [tasks, setTasks] = useState<LocalTask[]>([]);
   const [pendingTasksCount, setPendingTasksCount] = useState(0);
-  const [habits, setHabits] = useState<(LocalHabit & { completedToday?: boolean })[]>([]);
   const [waterAmount, setWaterAmount] = useState(0);
   const [todaySpend, setTodaySpend] = useState<number>(0);
   const [ideas, setIdeas] = useState<unknown[]>([]);
@@ -55,15 +54,6 @@ export default function Home() {
           return pB - pA;
         });
         setTasks(todayTasks);
-
-        // 2. Fetch habits & today's logs
-        const allHabits = await db.habits.toArray();
-        const todayLogs = await db.habitLogs.where('date').equals(todayStr).toArray();
-        const mappedHabits = allHabits.map(h => ({
-          ...h,
-          completedToday: todayLogs.some(l => l.habit_id === h.id && l.completed),
-        }));
-        setHabits(mappedHabits.slice(0, 5));
 
         // 3. Fetch water intake for today
         const todayWater = await db.waterLogs.where('date').equals(todayStr).toArray();
@@ -151,30 +141,6 @@ export default function Home() {
       read: true,
       _syncStatus: 'pending'
     });
-    setRefreshKey(prev => prev + 1);
-  };
-
-  const toggleHabit = async (habitId: string, completedToday?: boolean) => {
-    const db = getDB();
-    const todayStr = getToday();
-    const existingLog = await db.habitLogs
-      .where('[habit_id+date]')
-      .equals([habitId, todayStr])
-      .first();
-
-    if (existingLog) {
-      await db.habitLogs.update(existingLog.id, { completed: !completedToday });
-    } else {
-      await db.habitLogs.add({
-        id: crypto.randomUUID(),
-        user_id: 'local-user',
-        habit_id: habitId,
-        date: todayStr,
-        completed: true,
-        created_at: new Date().toISOString(),
-        _syncStatus: 'pending',
-      });
-    }
     setRefreshKey(prev => prev + 1);
   };
 
@@ -323,50 +289,6 @@ export default function Home() {
             </div>
           </>
         )}
-      </div>
-
-      {/* Habits Section */}
-      <div className={styles.section}>
-        <div className={styles.sectionHeader}>
-          <h3 className={styles.sectionTitle}>
-            <Compass className={styles.sectionIcon} /> Habit Streaks
-          </h3>
-          <button className={styles.addBtn} onClick={() => router.push('/habits')}>
-            <Plus size={16} /> Manage
-          </button>
-        </div>
-        <div className={styles.listCard}>
-          {isLoading ? (
-            <>
-              <Skeleton height="40px" className={styles.listItem} />
-              <Skeleton height="40px" className={styles.listItem} />
-              <Skeleton height="40px" className={styles.listItem} />
-            </>
-          ) : habits.length === 0 ? (
-            <div className={styles.emptyState}>Create a habit to build consistency!</div>
-          ) : (
-            habits.map(habit => (
-              <div key={habit.id} className={styles.listItem}>
-                <button
-                  onClick={() => toggleHabit(habit.id, habit.completedToday)}
-                  className={styles.checkBtn}
-                >
-                  {habit.completedToday ? (
-                    <CheckCircle2 className={styles.checkIconDone} size={20} />
-                  ) : (
-                    <Square className={styles.checkIcon} size={20} />
-                  )}
-                </button>
-                <div className={styles.itemDetails}>
-                  <span className={habit.completedToday ? styles.itemTextDone : styles.itemText}>
-                    {habit.name}
-                  </span>
-                  <span className={styles.habitFreqBadge}>{habit.frequency}</span>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
       </div>
 
       {/* Water consumption tracker */}
