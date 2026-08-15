@@ -6,7 +6,7 @@ import {
   LayoutDashboard,
   CheckSquare,
   Wallet,
-  Compass,
+  Clock,
   Menu,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -16,7 +16,7 @@ const navItems = [
   { href: '/', icon: LayoutDashboard, label: 'Home' },
   { href: '/tasks', icon: CheckSquare, label: 'Tasks' },
   { href: '/expenses', icon: Wallet, label: 'Expenses' },
-  { href: '/habits', icon: Compass, label: 'Habits' },
+  { href: '/daily-tracker', icon: Clock, label: 'Tracker' },
   { href: '/more', icon: Menu, label: 'More' },
 ];
 

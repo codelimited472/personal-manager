@@ -1,0 +1,137 @@
+.timetableContainer {
+  flex: 1;
+  overflow-y: auto;
+  position: relative;
+  background-color: var(--bg-primary);
+  /* Optional: we removed borders here since it's full-width on mobile */
+  height: 100%;
+}
+
+.timetableGrid {
+  display: flex;
+  position: relative;
+  min-height: 1920px; /* 24 hours * 80px */
+}
+
+.timeLabels {
+  width: 65px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--border-subtle);
+  background: var(--bg-secondary);
+  z-index: 5;
+}
+
+.timeLabel {
+  height: 80px;
+  padding-right: 12px;
+  text-align: right;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  position: relative;
+  top: -8px; /* Center with the line */
+}
+
+.contentArea {
+  flex: 1;
+  position: relative;
+  background-image: 
+    linear-gradient(var(--border-subtle) 1px, transparent 1px),
+    linear-gradient(rgba(0,0,0,0.03) 1px, transparent 1px);
+  background-size: 100% 80px, 100% 40px; /* 1 hour and 30 min marks */
+}
+
+/* For dark mode subtle lines */
+@media (prefers-color-scheme: dark) {
+  .contentArea {
+    background-image: 
+      linear-gradient(var(--border-subtle) 1px, transparent 1px),
+      linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px);
+  }
+}
+
+.hourLine {
+  height: 40px;
+  width: 100%;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.hourLine:hover {
+  background-color: var(--bg-hover);
+}
+
+.activityBlock {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  border-radius: 8px;
+  padding: 6px 10px;
+  color: white;
+  overflow: hidden;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  transition: transform 0.15s, box-shadow 0.15s;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(255,255,255,0.2);
+  backdrop-filter: blur(4px);
+}
+
+.activityBlock:hover {
+  transform: scale(1.02);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.2);
+  z-index: 20;
+}
+
+.activityTitle {
+  font-weight: 600;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+.activityTime {
+  font-size: 11px;
+  font-weight: 500;
+  opacity: 0.9;
+  margin-top: 2px;
+}
+
+.currentTimeLine {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: var(--accent-primary);
+  z-index: 30;
+  pointer-events: none;
+  box-shadow: 0 0 8px var(--accent-primary);
+}
+
+.currentTimeDot {
+  position: absolute;
+  left: -5px;
+  top: -5px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: var(--accent-primary);
+  box-shadow: 0 0 0 4px rgba(var(--accent-primary-rgb), 0.2);
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(var(--accent-primary-rgb), 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(var(--accent-primary-rgb), 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(var(--accent-primary-rgb), 0);
+  }
+}

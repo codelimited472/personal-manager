@@ -19,7 +19,7 @@ interface HeaderProps {
 const pageTitles: Record<string, string> = {
   '/': 'Personal Manager',
   '/tasks': 'Tasks',
-  '/habits': 'Habits',
+  '/daily-tracker': 'Daily Tracker',
   '/water': 'Water Tracker',
   '/expenses': 'Expenses',
   '/vehicles': 'Vehicles',

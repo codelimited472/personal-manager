@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/client';
 import { getDB, type SyncStatus } from '@/lib/db';
 
 export type SyncableTable = 
-  | 'tasks' | 'habits' | 'habitLogs' | 'waterLogs' | 'expenses' 
+  | 'tasks' | 'dailyActivities' | 'waterLogs' | 'expenses' 
   | 'captures' | 'notifications' | 'settings'
   | 'vehicles' | 'vehicleIssues' | 'petrolExpenses' 
   | 'employeeProfiles' | 'employeeExpenses' | 'trips' | 'tripExpenses' | 'tripPackingItems'
@@ -16,8 +16,7 @@ export type SyncableTable =
 // Maps local Dexie table names to Supabase table names
 export const tableMap: Record<SyncableTable, string> = {
   tasks: 'tasks',
-  habits: 'habits',
-  habitLogs: 'habit_logs',
+  dailyActivities: 'daily_activities',
   waterLogs: 'water_logs',
   expenses: 'expenses',
   captures: 'captures',
@@ -239,7 +238,7 @@ export async function syncAll(userId: string): Promise<void> {
 
   // Sync core/parent tables first to satisfy foreign key constraints
   const tier1: SyncableTable[] = [
-    'settings', 'tasks', 'habits', 'waterLogs', 'expenses', 'captures',
+    'settings', 'tasks', 'dailyActivities', 'waterLogs', 'expenses', 'captures',
     'notifications', 'vehicles', 'employeeProfiles', 'trips',
     'places', 'restaurants', 'noteFolders', 'inventoryItems', 'expiryItems',
     'wardrobeItems', 'documents', 'businessWorkspaces', 'ideas', 'haircuts', 'appLists', 'events'
@@ -247,7 +246,7 @@ export async function syncAll(userId: string): Promise<void> {
 
   // Sync child tables
   const tier2: SyncableTable[] = [
-    'habitLogs', 'vehicleIssues', 'petrolExpenses', 'employeeExpenses',
+    'vehicleIssues', 'petrolExpenses', 'employeeExpenses',
     'tripExpenses', 'tripPackingItems', 'outfits',
     'businessNotes', 'businessIdeas', 'businessDocuments', 'businessContacts', 
     'businessChecklists', 'businessFuturePlans', 'businessGoals',

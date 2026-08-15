@@ -29,28 +29,18 @@ export interface LocalTask extends SyncFields {
   updated_at: string;
 }
 
-export interface LocalHabit extends SyncFields {
+export interface LocalDailyActivity extends SyncFields {
   id: string;
   user_id: string;
-  name: string;
-  description?: string;
-  frequency: 'daily' | 'weekly' | 'monthly';
-  target_days?: string[];
-  category?: string;
+  date: string;
+  start_time: string;
+  end_time: string;
+  title: string;
+  category: string;
   color: string;
-  is_active: boolean;
+  description?: string;
   created_at: string;
   updated_at: string;
-}
-
-export interface LocalHabitLog extends SyncFields {
-  id: string;
-  user_id: string;
-  habit_id: string;
-  date: string;
-  completed: boolean;
-  notes?: string;
-  created_at: string;
 }
 
 export interface LocalWaterLog extends SyncFields {
@@ -501,8 +491,7 @@ export interface LocalNotification extends SyncFields {
 
 class PersonalManagerDB extends Dexie {
   tasks!: EntityTable<LocalTask, 'id'>;
-  habits!: EntityTable<LocalHabit, 'id'>;
-  habitLogs!: EntityTable<LocalHabitLog, 'id'>;
+  dailyActivities!: EntityTable<LocalDailyActivity, 'id'>;
   waterLogs!: EntityTable<LocalWaterLog, 'id'>;
   expenses!: EntityTable<LocalExpense, 'id'>;
   employeeProfiles!: EntityTable<LocalEmployeeProfile, 'id'>;
@@ -641,6 +630,12 @@ class PersonalManagerDB extends Dexie {
 
     this.version(12).stores({
       businessTasks: null,
+    });
+
+    this.version(13).stores({
+      habits: null,
+      habitLogs: null,
+      dailyActivities: 'id, user_id, date, _syncStatus',
     });
   }
 }
