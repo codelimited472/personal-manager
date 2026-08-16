@@ -21,25 +21,27 @@ export interface DailyActivityFormData {
   description?: string;
 }
 
-export const ACTIVITY_CATEGORIES = [
-  'Sleep',
-  'Work',
-  'Travel',
-  'Exercise',
-  'Food',
-  'Leisure',
-  'Learning',
-  'Chores',
-  'Other'
-];
+export const ACTIVITY_CATEGORIES: string[] = [];
 
 export const ACTIVITY_COLORS = [
-  '#3b82f6', // blue
-  '#10b981', // green
-  '#ef4444', // red
-  '#f59e0b', // yellow
-  '#8b5cf6', // purple
-  '#ec4899', // pink
-  '#6366f1', // indigo
-  '#64748b', // slate
+  { hex: '#3b82f6', name: 'Blue' },
+  { hex: '#10b981', name: 'Emerald' },
+  { hex: '#ef4444', name: 'Red' },
+  { hex: '#f59e0b', name: 'Amber' },
+  { hex: '#8b5cf6', name: 'Violet' },
+  { hex: '#ec4899', name: 'Pink' },
+  { hex: '#6366f1', name: 'Indigo' },
+  { hex: '#64748b', name: 'Slate' },
+  { hex: '#14b8a6', name: 'Teal' },
+  { hex: '#06b6d4', name: 'Cyan' },
+  { hex: '#0ea5e9', name: 'Sky' },
+  { hex: '#84cc16', name: 'Lime' },
+  { hex: '#22c55e', name: 'Green' },
+  { hex: '#eab308', name: 'Yellow' },
+  { hex: '#f97316', name: 'Orange' },
+  { hex: '#d946ef', name: 'Fuchsia' },
+  { hex: '#a855f7', name: 'Purple' },
+  { hex: '#be123c', name: 'Rose' },
+  { hex: '#78716c', name: 'Stone' },
+  { hex: '#475569', name: 'Blue Gray' },
 ];

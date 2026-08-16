@@ -7,7 +7,6 @@ import BottomNav from '@/components/layout/BottomNav';
 import { useDailyTracker } from '@/features/daily-tracker/hooks/useDailyTracker';
 import { Timetable } from '@/features/daily-tracker/components/Timetable';
 import { ActivityModal } from '@/features/daily-tracker/components/ActivityModal';
-import { DailyAnalytics } from '@/features/daily-tracker/components/DailyAnalytics';
 import { DailyActivity } from '@/features/daily-tracker/types';
 import { Plus } from 'lucide-react';
 import { getToday, addDays, format } from '@/lib/utils';
@@ -84,29 +83,18 @@ export default function DailyTrackerPage() {
               onTimeSlotClick={(time) => setModalState({ isOpen: true, selectedTime: time })}
             />
           </div>
-
-          {/* Sidebar Analytics Area */}
-          <div className={styles.analyticsSection}>
-            <DailyAnalytics activities={activities || []} />
-            
-            <button
-              className="hidden lg:flex w-full mt-6 bg-blue-600 text-white rounded-xl items-center justify-center gap-2 py-4 shadow-lg hover:bg-blue-700 transition-all font-semibold"
-              onClick={() => setModalState({ isOpen: true })}
-            >
-              <Plus size={22} />
-              <span>Track New Activity</span>
-            </button>
-          </div>
         </div>
 
-        {/* Mobile FAB */}
-        <button
-          className={styles.mobileFab}
-          onClick={() => setModalState({ isOpen: true })}
-          aria-label="Add Activity"
-        >
-          <Plus size={28} />
-        </button>
+        {/* Floating Action Button */}
+        <div className={styles.fabWrapper}>
+          <button
+            className={styles.fabBtn}
+            onClick={() => setModalState({ isOpen: true })}
+            title="Add Activity"
+          >
+            <Plus size={24} />
+          </button>
+        </div>
       </main>
 
       <BottomNav />

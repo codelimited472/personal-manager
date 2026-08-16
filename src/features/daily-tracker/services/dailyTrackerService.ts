@@ -41,6 +41,12 @@ export const dailyTrackerService = {
 
     await db.dailyActivities.add(newActivity);
 
+    if (data.title && data.color) {
+      await db.dailyActivities
+        .filter(a => a.title === data.title)
+        .modify({ color: data.color, _syncStatus: 'pending', updated_at: new Date().toISOString() });
+    }
+
     const { _syncStatus, ...activity } = newActivity;
     return activity as DailyActivity;
   },
@@ -52,6 +58,12 @@ export const dailyTrackerService = {
       updated_at: new Date().toISOString(),
       _syncStatus: 'pending' as const,
     });
+
+    if (data.title && data.color) {
+      await db.dailyActivities
+        .filter(a => a.title === data.title)
+        .modify({ color: data.color, _syncStatus: 'pending', updated_at: new Date().toISOString() });
+    }
   },
 
   async deleteActivity(id: string): Promise<void> {

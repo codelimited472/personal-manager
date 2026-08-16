@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { X, Trash2 } from 'lucide-react';
+import { X, Trash2, ChevronDown } from 'lucide-react';
 import { DailyActivity, DailyActivityFormData, ACTIVITY_CATEGORIES, ACTIVITY_COLORS } from '../types';
+import { getDB } from '@/lib/db';
 
 interface ActivityModalProps {
   isOpen: boolean;
@@ -21,42 +22,116 @@ export function ActivityModal({
 }: ActivityModalProps) {
   const [formData, setFormData] = useState<DailyActivityFormData>({
     title: '',
-    category: ACTIVITY_CATEGORIES[0],
-    color: ACTIVITY_COLORS[0],
+    category: '',
+    color: '',
     start_time: '09:00',
     end_time: '10:00',
     description: '',
   });
 
   const [isClosing, setIsClosing] = useState(false);
+  const [savedCategories, setSavedCategories] = useState<string[]>([]);
+  const [showCatDropdown, setShowCatDropdown] = useState(false);
+  const [showColorDropdown, setShowColorDropdown] = useState(false);
+  const [colorToCategoryMap, setColorToCategoryMap] = useState<Record<string, string>>({});
+  const [categoryToColorMap, setCategoryToColorMap] = useState<Record<string, string>>({});
 
   useEffect(() => {
+    async function loadCategories() {
+      try {
+        const db = getDB();
+        const allActivities = await db.dailyActivities.toArray();
+        const counts: Record<string, number> = {};
+        const colToCat: Record<string, string> = {};
+        const catToCol: Record<string, string> = {};
+        allActivities.forEach(a => {
+          if (a.title) {
+            const titles = a.title.split(',').map(s => s.trim()).filter(Boolean);
+            titles.forEach(t => {
+              counts[t] = (counts[t] || 0) + 1;
+              if (a.color && !colToCat[a.color]) {
+                colToCat[a.color] = t;
+              }
+              if (a.color && !catToCol[t]) {
+                catToCol[t] = a.color;
+              }
+            });
+          }
+        });
+
+        setColorToCategoryMap(colToCat);
+        setCategoryToColorMap(catToCol);
+
+        const combined = new Set(Object.keys(counts));
+        let finalCats = Array.from(combined);
+        
+        if (finalCats.length === 0) {
+          finalCats = ['Work', 'Sleep', 'Exercise', 'Reading', 'Travel'];
+        } else {
+          finalCats.sort((a, b) => (counts[b] || 0) - (counts[a] || 0));
+        }
+        
+        setSavedCategories(finalCats);
+
+        // Find latest end_time for today to auto-populate start_time
+        const todayStr = new Date().toLocaleDateString('en-CA'); // local YYYY-MM-DD
+        const todaysActivities = allActivities.filter(a => a.date === todayStr);
+        let latestEndTime = '09:00';
+        if (todaysActivities.length > 0) {
+          todaysActivities.sort((a, b) => b.end_time.localeCompare(a.end_time));
+          latestEndTime = todaysActivities[0].end_time;
+        }
+
+        return latestEndTime;
+
+      } catch (err) {
+        console.error(err);
+        return '09:00';
+      }
+    }
+    
     if (isOpen) {
       setIsClosing(false);
-      if (initialData) {
-        setFormData({
-          title: initialData.title || '',
-          category: initialData.category || ACTIVITY_CATEGORIES[0],
-          color: initialData.color || ACTIVITY_COLORS[0],
-          start_time: initialData.start_time || '09:00',
-          end_time: initialData.end_time || '10:00',
-          description: initialData.description || '',
-        });
-      } else if (selectedTime) {
-        // Default to 1 hour duration
-        const [h, m] = selectedTime.split(':').map(Number);
-        const endH = (h + 1).toString().padStart(2, '0');
-        const endM = m.toString().padStart(2, '0');
-        
-        setFormData({
-          title: '',
-          category: ACTIVITY_CATEGORIES[0],
-          color: ACTIVITY_COLORS[0],
-          start_time: selectedTime,
-          end_time: `${endH}:${endM}`,
-          description: '',
-        });
-      }
+      loadCategories().then(latestEndTime => {
+        if (initialData) {
+          setFormData({
+            title: initialData.title || '',
+            category: initialData.category || initialData.title || '',
+            color: initialData.color || '',
+            start_time: initialData.start_time || '09:00',
+            end_time: initialData.end_time || '10:00',
+            description: initialData.description || '',
+          });
+        } else if (selectedTime) {
+          // Default to 1 hour duration
+          const [h, m] = selectedTime.split(':').map(Number);
+          const endH = (h + 1).toString().padStart(2, '0');
+          const endM = m.toString().padStart(2, '0');
+          
+          setFormData({
+            title: '',
+            category: '',
+            color: '',
+            start_time: selectedTime,
+            end_time: `${endH}:${endM}`,
+            description: '',
+          });
+        } else {
+          // New activity with no specific selected time - use latest end time!
+          const [h, m] = latestEndTime.split(':').map(Number);
+          const endH = ((h + 1) % 24).toString().padStart(2, '0');
+          const endM = m.toString().padStart(2, '0');
+
+          setFormData({
+            title: '',
+            category: '',
+            color: '',
+            start_time: latestEndTime,
+            end_time: `${endH}:${endM}`,
+            description: '',
+          });
+        }
+      });
     }
   }, [isOpen, initialData, selectedTime]);
 
@@ -72,141 +147,257 @@ export function ActivityModal({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData);
+    
+    let finalColor = formData.color;
+    
+    // For color mapping, use the first category if there are multiple
+    const firstCategory = formData.title.split(',')[0]?.trim() || formData.title;
+
+    if (categoryToColorMap[firstCategory]) {
+      finalColor = categoryToColorMap[firstCategory];
+    } else if (!finalColor || finalColor === '') {
+      const usedColors = new Set(Object.values(categoryToColorMap));
+      const availableColors = ACTIVITY_COLORS.filter(c => !usedColors.has(c.hex));
+      
+      if (availableColors.length > 0) {
+        finalColor = availableColors[Math.floor(Math.random() * availableColors.length)].hex;
+      } else {
+        finalColor = ACTIVITY_COLORS[Math.floor(Math.random() * ACTIVITY_COLORS.length)].hex;
+      }
+    }
+
+    onSave({ ...formData, color: finalColor });
     handleClose();
   };
 
+  const toggleCategory = (cat: string) => {
+    const currentCategories = formData.title.split(',').map(s => s.trim()).filter(Boolean);
+    let newCategories;
+    if (currentCategories.includes(cat)) {
+      newCategories = currentCategories.filter(c => c !== cat); // Remove if exists
+    } else {
+      newCategories = [...currentCategories, cat]; // Append if not exists
+    }
+    const newTitle = newCategories.join(', ');
+    
+    setFormData({ 
+      ...formData, 
+      title: newTitle, 
+      category: newTitle,
+      color: categoryToColorMap[newCategories[0]] || formData.color 
+    });
+  };
+
+  const addTimeToEnd = (minutesToAdd: number) => {
+    const [h, m] = formData.end_time.split(':').map(Number);
+    let newM = m + minutesToAdd;
+    let newH = h + Math.floor(newM / 60);
+    newM = newM % 60;
+    newH = newH % 24;
+    
+    const formattedH = newH.toString().padStart(2, '0');
+    const formattedM = newM.toString().padStart(2, '0');
+    
+    setFormData(prev => ({ ...prev, end_time: `${formattedH}:${formattedM}` }));
+  };
+
+  const resetTime = () => {
+    const [h, m] = formData.start_time.split(':').map(Number);
+    let newM = m;
+    let newH = h + 1;
+    newH = newH % 24;
+    
+    const formattedH = newH.toString().padStart(2, '0');
+    const formattedM = newM.toString().padStart(2, '0');
+    
+    setFormData(prev => ({ ...prev, end_time: `${formattedH}:${formattedM}` }));
+  };
+
   return (
-    <div className={`fixed inset-0 z-50 flex flex-col justify-end lg:justify-center lg:items-center p-0 lg:p-4 transition-opacity duration-200 ${isClosing ? 'opacity-0' : 'opacity-100'}`}>
+    <>
       {/* Backdrop */}
-      <div 
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm" 
-        onClick={handleClose} 
-      />
+      <div className="modal-backdrop" onClick={handleClose} />
       
       {/* Modal/Bottom Sheet Content */}
-      <div className={`relative bg-white dark:bg-gray-900 w-full lg:max-w-md lg:rounded-2xl rounded-t-3xl overflow-hidden flex flex-col max-h-[90vh] shadow-2xl transition-transform duration-200 ${isClosing ? 'translate-y-full lg:scale-95' : 'translate-y-0 lg:scale-100'}`}>
-        
-        {/* Mobile Pull Indicator */}
-        <div className="w-full flex justify-center pt-3 pb-1 lg:hidden">
-          <div className="w-12 h-1.5 bg-gray-300 dark:bg-gray-700 rounded-full" />
-        </div>
-
-        <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100 dark:border-gray-800">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-            {initialData?.id ? 'Edit Activity' : 'New Activity'}
-          </h2>
-          <div className="flex gap-2">
-            {initialData?.id && onDelete && (
-              <button 
-                type="button"
-                onClick={() => { onDelete(initialData.id!); handleClose(); }}
-                className="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-full transition-colors"
-                aria-label="Delete"
-              >
-                <Trash2 size={20} />
-              </button>
-            )}
-            <button 
-              onClick={handleClose} 
-              className="p-2 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 rounded-full transition-colors"
-            >
-              <X size={20} />
-            </button>
-          </div>
-        </div>
-
-        <form onSubmit={handleSubmit} className="px-6 py-5 overflow-y-auto flex-1 flex flex-col gap-6">
-          <div>
-            <input
-              type="text"
-              required
-              value={formData.title}
-              onChange={e => setFormData({ ...formData, title: e.target.value })}
-              className="w-full bg-transparent text-2xl font-semibold text-gray-900 dark:text-white placeholder-gray-400 border-none outline-none focus:ring-0 px-0 pb-2"
-              placeholder="What are you doing?"
-              autoFocus
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="bg-gray-50 dark:bg-gray-800/50 p-3 rounded-xl border border-gray-100 dark:border-gray-700/50 focus-within:ring-2 focus-within:ring-blue-500/50 transition-shadow">
-              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">Start Time</label>
-              <input
-                type="time"
-                required
-                value={formData.start_time}
-                onChange={e => setFormData({ ...formData, start_time: e.target.value })}
-                className="w-full bg-transparent text-gray-900 dark:text-white border-none outline-none font-medium p-0"
-              />
-            </div>
-            <div className="bg-gray-50 dark:bg-gray-800/50 p-3 rounded-xl border border-gray-100 dark:border-gray-700/50 focus-within:ring-2 focus-within:ring-blue-500/50 transition-shadow">
-              <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">End Time</label>
-              <input
-                type="time"
-                required
-                value={formData.end_time}
-                onChange={e => setFormData({ ...formData, end_time: e.target.value })}
-                className="w-full bg-transparent text-gray-900 dark:text-white border-none outline-none font-medium p-0"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Category</label>
-            <div className="flex flex-wrap gap-2">
-              {ACTIVITY_CATEGORIES.map(cat => (
-                <button
-                  key={cat}
-                  type="button"
-                  onClick={() => setFormData({ ...formData, category: cat })}
-                  className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                    formData.category === cat 
-                      ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300 border border-blue-200 dark:border-blue-800' 
-                      : 'bg-gray-50 text-gray-600 dark:bg-gray-800 dark:text-gray-300 border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700'
-                  }`}
-                >
-                  {cat}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Color</label>
-            <div className="flex flex-wrap gap-3">
-              {ACTIVITY_COLORS.map(color => (
-                <button
-                  key={color}
-                  type="button"
-                  onClick={() => setFormData({ ...formData, color })}
-                  className={`w-10 h-10 rounded-full flex items-center justify-center transition-transform ${
-                    formData.color === color ? 'ring-4 ring-offset-2 dark:ring-offset-gray-900 scale-110' : 'hover:scale-110'
-                  }`}
-                  style={{ backgroundColor: color, '--tw-ring-color': `${color}80` } as React.CSSProperties}
-                />
-              ))}
-            </div>
-          </div>
-
-          <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-xl border border-gray-100 dark:border-gray-700/50 mt-2 mb-4">
-            <textarea
-              value={formData.description}
-              onChange={e => setFormData({ ...formData, description: e.target.value })}
-              className="w-full bg-transparent border-none outline-none text-gray-900 dark:text-white placeholder-gray-500 resize-none p-0"
-              placeholder="Add details or notes..."
-              rows={2}
-            />
-          </div>
-
-          <button
-            type="submit"
-            className="w-full py-4 text-white bg-blue-600 hover:bg-blue-700 rounded-xl font-bold text-lg transition-colors shadow-lg shadow-blue-500/30"
+      <div className="bottom-sheet" id="activity-form-sheet">
+        <div className="bottom-sheet-handle" />
+        <div className="bottom-sheet-content p-4">
+          <div 
+            className="mb-4 border-b border-gray-100 dark:border-gray-800 pb-3"
+            style={{ display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'nowrap' }}
           >
-            Save Activity
-          </button>
-        </form>
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
+              {initialData?.id ? 'Edit Activity' : 'New Activity'}
+            </h2>
+            <div style={{ display: 'flex', gap: '8px', flexShrink: 0, marginLeft: '12px' }}>
+              {initialData?.id && onDelete && (
+                <button 
+                  type="button"
+                  onClick={() => { onDelete(initialData.id!); handleClose(); }}
+                  className="btn-icon btn-ghost text-red-500 hover:text-red-600"
+                  aria-label="Delete"
+                >
+                  <Trash2 size={20} />
+                </button>
+              )}
+              <button 
+                onClick={handleClose} 
+                className="btn-icon btn-ghost"
+              >
+                <X size={20} />
+              </button>
+            </div>
+          </div>
+
+          <form onSubmit={handleSubmit} className="form flex flex-col gap-6">
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="input-group">
+                <label className="input-label">Start Time</label>
+                <input
+                  type="time"
+                  required
+                  value={formData.start_time}
+                  onChange={e => setFormData({ ...formData, start_time: e.target.value })}
+                  className="input"
+                />
+              </div>
+              <div className="input-group">
+                <label className="input-label">End Time</label>
+                <input
+                  type="time"
+                  required
+                  value={formData.end_time}
+                  onChange={e => setFormData({ ...formData, end_time: e.target.value })}
+                  className="input"
+                />
+              </div>
+            </div>
+
+            {/* Time Preset Tags */}
+            <div className="flex flex-wrap gap-2 -mt-2">
+              {[
+                { label: '+1 hr', value: 60 },
+                { label: '+45 m', value: 45 },
+                { label: '+30 m', value: 30 },
+                { label: '+15 m', value: 15 },
+                { label: '+10 m', value: 10 },
+                { label: '+5 m', value: 5 },
+              ].map(preset => (
+                <div
+                  key={preset.label}
+                  onClick={() => addTimeToEnd(preset.value)}
+                  className="chip"
+                  style={{ padding: '4px 10px', fontSize: '0.75rem' }}
+                >
+                  {preset.label}
+                </div>
+              ))}
+              <div
+                onClick={resetTime}
+                className="chip"
+                style={{ padding: '4px 10px', fontSize: '0.75rem', backgroundColor: 'var(--bg-glass-hover)' }}
+              >
+                Reset
+              </div>
+            </div>
+
+            <div className="input-group">
+              <label className="input-label">Category</label>
+              
+              {/* Relative wrapper specifically for the input and its dropdown */}
+              <div style={{ position: 'relative' }}>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g., Work, Sleep, Travel"
+                  value={formData.title}
+                  onChange={e => {
+                    const val = e.target.value;
+                    setFormData({ 
+                      ...formData, 
+                      title: val, 
+                      category: val,
+                      color: categoryToColorMap[val.split(',')[0]?.trim()] || formData.color
+                    });
+                  }}
+                  onFocus={() => setShowCatDropdown(true)}
+                  onClick={() => setShowCatDropdown(true)}
+                  onBlur={() => setTimeout(() => setShowCatDropdown(false), 200)}
+                  className="input"
+                />
+
+                {/* Dropdown Menu - perfectly floats below the input, always shows categories to allow multiple selection */}
+                {showCatDropdown && savedCategories.length > 0 && (
+                  <ul className="dropdown-menu">
+                    {savedCategories.map(cat => {
+                      const isSelected = formData.title.split(',').map(s => s.trim()).includes(cat);
+                      return (
+                        <li 
+                          key={cat} 
+                          className="dropdown-item"
+                          style={{ 
+                            flexDirection: 'row', 
+                            alignItems: 'center', 
+                            whiteSpace: 'nowrap',
+                            backgroundColor: isSelected ? 'var(--bg-glass)' : 'transparent',
+                            color: isSelected ? 'var(--accent-primary)' : 'inherit'
+                          }}
+                          onMouseDown={(e) => {
+                            e.preventDefault(); // Keep input focused
+                            toggleCategory(cat);
+                            setShowCatDropdown(false);
+                          }}
+                        >
+                          {cat}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </div>
+
+              {/* Category Tags */}
+              {savedCategories.length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {savedCategories.map(cat => {
+                    const isSelected = formData.title.split(',').map(s => s.trim()).includes(cat);
+                    return (
+                      <div
+                        key={cat}
+                        onClick={() => {
+                          toggleCategory(cat);
+                          setShowCatDropdown(false);
+                        }}
+                        className={isSelected ? 'chip chip-active' : 'chip'}
+                      >
+                        {cat}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <div className="input-group">
+              <textarea
+                value={formData.description}
+                onChange={e => setFormData({ ...formData, description: e.target.value })}
+                className="input textarea"
+                placeholder="Add details or notes..."
+                rows={2}
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="btn btn-primary btn-full btn-lg mt-2"
+            >
+              Save Activity
+            </button>
+          </form>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
