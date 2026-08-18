@@ -389,11 +389,11 @@ export default function ExpensesPage() {
           {personalViewTimeframe === 'monthly' ? (
             <div className={pageStyles.statsGrid}>
               <div className={pageStyles.statCard}>
-                <div className={pageStyles.statValue}>₹{todaySpend}</div>
+                <div className={pageStyles.statValue}>₹{Math.round(todaySpend)}</div>
                 <div className={pageStyles.statLabel}>Today&apos;s Spend</div>
               </div>
               <div className={pageStyles.statCard}>
-                <div className={pageStyles.statValue}>₹{yesterdaySpend}</div>
+                <div className={pageStyles.statValue}>₹{Math.round(yesterdaySpend)}</div>
                 <div className={pageStyles.statLabel}>Yesterday&apos;s Spend</div>
               </div>
               <div className={pageStyles.statCard}>
@@ -401,14 +401,14 @@ export default function ExpensesPage() {
                 <div className={pageStyles.statLabel}>Avg. Daily (This Month)</div>
               </div>
               <div className={pageStyles.statCard}>
-                <div className={pageStyles.statValue}>₹{monthlySpend}</div>
+                <div className={pageStyles.statValue}>₹{Math.round(monthlySpend)}</div>
                 <div className={pageStyles.statLabel}>Monthly Spend</div>
               </div>
             </div>
           ) : (
             <div className={pageStyles.statsGrid}>
               <div className={pageStyles.statCard}>
-                <div className={pageStyles.statValue}>₹{yearlySpend}</div>
+                <div className={pageStyles.statValue}>₹{Math.round(yearlySpend)}</div>
                 <div className={pageStyles.statLabel}>Yearly Spend</div>
               </div>
               <div className={pageStyles.statCard}>
@@ -426,7 +426,7 @@ export default function ExpensesPage() {
               <div className={pageStyles.statsGrid}>
                 {Object.entries(spendByMethod).map(([method, amount]) => (
                   <div key={method} className={pageStyles.statCard}>
-                    <div className={pageStyles.statValue}>₹{amount.toFixed(2)}</div>
+                    <div className={pageStyles.statValue}>₹{Math.round(amount)}</div>
                     <div className={pageStyles.statLabel}>{method}</div>
                   </div>
                 ))}
