@@ -15,6 +15,9 @@ export default function ExpensesPage() {
   const db = getDB();
 
   const [analyticsTimeframe, setAnalyticsTimeframe] = useState<'monthly' | 'yearly'>('monthly');
+  const [analyticsSelectedMonth, setAnalyticsSelectedMonth] = useState(getToday().substring(0, 7));
+  const [analyticsSelectedYear, setAnalyticsSelectedYear] = useState(getToday().substring(0, 4));
+  const [selectedAnalyticsCategories, setSelectedAnalyticsCategories] = useState<string[]>([]);
 
   // Personal Expense State
   const [expenses, setExpenses] = useState<LocalExpense[]>([]);
@@ -724,30 +727,51 @@ export default function ExpensesPage() {
       {/* 4. Analytics tab */}
       {activeTab === 'analytics' && (
         <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
             <h3 className={styles.sectionHeader} style={{ marginBottom: 0 }}>Analytics Overview</h3>
-            <div className={styles.tabBar} style={{ marginBottom: 0, padding: '4px' }}>
-              <button
-                onClick={() => setAnalyticsTimeframe('monthly')}
-                className={analyticsTimeframe === 'monthly' ? styles.tabActive : styles.tab}
-                style={{ padding: '6px 12px', fontSize: '0.85rem' }}
-              >
-                Monthly
-              </button>
-              <button
-                onClick={() => setAnalyticsTimeframe('yearly')}
-                className={analyticsTimeframe === 'yearly' ? styles.tabActive : styles.tab}
-                style={{ padding: '6px 12px', fontSize: '0.85rem' }}
-              >
-                Yearly
-              </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              {analyticsTimeframe === 'monthly' ? (
+                <input 
+                  type="month" 
+                  value={analyticsSelectedMonth} 
+                  onChange={(e) => setAnalyticsSelectedMonth(e.target.value)} 
+                  className={styles.input} 
+                  style={{ width: 'auto', margin: 0, padding: '6px 12px' }} 
+                />
+              ) : (
+                <input 
+                  type="number" 
+                  min="2000" 
+                  max="2100" 
+                  value={analyticsSelectedYear} 
+                  onChange={(e) => setAnalyticsSelectedYear(e.target.value)} 
+                  className={styles.input} 
+                  style={{ width: '100px', margin: 0, padding: '6px 12px' }} 
+                />
+              )}
+              <div className={styles.tabBar} style={{ marginBottom: 0, padding: '4px' }}>
+                <button
+                  onClick={() => setAnalyticsTimeframe('monthly')}
+                  className={analyticsTimeframe === 'monthly' ? styles.tabActive : styles.tab}
+                  style={{ padding: '6px 12px', fontSize: '0.85rem' }}
+                >
+                  Monthly
+                </button>
+                <button
+                  onClick={() => setAnalyticsTimeframe('yearly')}
+                  className={analyticsTimeframe === 'yearly' ? styles.tabActive : styles.tab}
+                  style={{ padding: '6px 12px', fontSize: '0.85rem' }}
+                >
+                  Yearly
+                </button>
+              </div>
             </div>
           </div>
 
           <h4 style={{ marginBottom: '12px', fontSize: '1.05rem', color: 'var(--text-secondary)', fontWeight: 'var(--weight-semibold)' }}>Payment Source Analytics</h4>
           <div className={styles.listSection} style={{ background: 'var(--bg-secondary)', padding: '24px', borderRadius: 'var(--radius-xl)', border: '1px solid var(--border-primary)', marginBottom: '24px' }}>
             {(() => {
-              const currentExps = analyticsTimeframe === 'monthly' ? monthlyExpenses : yearlyExpenses;
+              const currentExps = analyticsTimeframe === 'monthly' ? expenses.filter(e => e.date.startsWith(analyticsSelectedMonth)) : expenses.filter(e => e.date.startsWith(analyticsSelectedYear));
               const sourceTotals = currentExps.reduce((acc, exp) => {
                 const s = exp.payment_method || 'Unknown';
                 acc[s] = (acc[s] || 0) + exp.amount;
@@ -792,7 +816,7 @@ export default function ExpensesPage() {
           <h4 style={{ marginBottom: '12px', fontSize: '1.05rem', color: 'var(--text-secondary)', fontWeight: 'var(--weight-semibold)' }}>Category Analytics</h4>
           <div className={styles.listSection} style={{ background: 'var(--bg-secondary)', padding: '24px', borderRadius: 'var(--radius-xl)', border: '1px solid var(--border-primary)' }}>
             {(() => {
-              const currentExps = analyticsTimeframe === 'monthly' ? monthlyExpenses : yearlyExpenses;
+              const currentExps = analyticsTimeframe === 'monthly' ? expenses.filter(e => e.date.startsWith(analyticsSelectedMonth)) : expenses.filter(e => e.date.startsWith(analyticsSelectedYear));
               const catTotals = currentExps.reduce((acc, exp) => {
                 const c = exp.category || 'Other';
                 acc[c] = (acc[c] || 0) + exp.amount;
@@ -807,28 +831,48 @@ export default function ExpensesPage() {
                 return <p className={styles.emptyState}>No expenses found for this period.</p>;
               }
 
+              const handleCategoryClick = (cat: string) => {
+                setSelectedAnalyticsCategories(prev => 
+                  prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat]
+                );
+              };
+
+              const selectedTotal = sorted.filter(([cat]) => selectedAnalyticsCategories.includes(cat)).reduce((sum, [, amt]) => sum + amt, 0);
+
               return (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                  {sorted.map(([cat, amt]) => (
-                    <div key={cat} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {selectedAnalyticsCategories.length > 0 && (
+                    <div style={{ padding: '16px', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div>
+                        <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Selected Total:</span>
+                        <strong style={{ fontSize: '1.2rem', marginLeft: '8px' }}>₹{Math.round(selectedTotal).toLocaleString()}</strong>
+                      </div>
+                      <button onClick={() => setSelectedAnalyticsCategories([])} style={{ fontSize: '0.85rem', color: 'var(--accent-danger)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px', borderRadius: '4px' }}>Clear Selection</button>
+                    </div>
+                  )}
+                  {sorted.map(([cat, amt]) => {
+                    const isSelected = selectedAnalyticsCategories.includes(cat);
+                    return (
+                    <div key={cat} onClick={() => handleCategoryClick(cat)} style={{ display: 'flex', flexDirection: 'column', gap: '8px', cursor: 'pointer', padding: '12px', borderRadius: '8px', background: isSelected ? 'var(--bg-tertiary)' : 'transparent', transition: 'background 0.2s', margin: '-12px' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.95rem', color: 'var(--text-primary)', fontWeight: 'var(--weight-medium)' }}>
                         <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent-primary)' }}></span>
+                          <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: isSelected ? 'var(--accent-info)' : 'var(--accent-primary)' }}></span>
                           {cat}
                         </span>
-                        <span>₹{amt.toLocaleString()} <span style={{ color: 'var(--text-tertiary)', fontSize: '0.8rem', marginLeft: '4px' }}>({(amt / totalAmt * 100).toFixed(1)}%)</span></span>
+                        <span>₹{Math.round(amt).toLocaleString()} <span style={{ color: 'var(--text-tertiary)', fontSize: '0.8rem', marginLeft: '4px' }}>({(amt / totalAmt * 100).toFixed(1)}%)</span></span>
                       </div>
-                      <div style={{ width: '100%', height: '8px', background: 'var(--bg-tertiary)', borderRadius: '4px', overflow: 'hidden' }}>
+                      <div style={{ width: '100%', height: '8px', background: 'var(--bg-secondary)', borderRadius: '4px', overflow: 'hidden' }}>
                         <div style={{ 
                           width: `${(amt / maxAmt) * 100}%`, 
                           height: '100%', 
-                          background: 'var(--accent-primary)',
+                          background: isSelected ? 'var(--accent-info)' : 'var(--accent-primary)',
                           borderRadius: '4px',
-                          transition: 'width 0.5s ease-out'
+                          transition: 'width 0.5s ease-out, background 0.2s'
                         }} />
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               );
             })()}
