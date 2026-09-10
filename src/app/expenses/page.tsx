@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Wallet, Users, Car, Plus, Trash2, CheckCircle2, TrendingUp, Landmark } from 'lucide-react';
+import { Wallet, Users, Car, Plus, Trash2, CheckCircle2, TrendingUp, Landmark, Edit2, X } from 'lucide-react';
 import { getDB, type LocalExpense, type LocalEmployeeProfile, type LocalEmployeeExpense, type LocalPetrolExpense, type LocalVehicle } from '@/lib/db';
 import { getToday } from '@/lib/utils';
 import QuickExpenseLog from '@/components/QuickExpenseLog';
@@ -22,6 +22,14 @@ export default function ExpensesPage() {
   // Personal Expense State
   const [expenses, setExpenses] = useState<LocalExpense[]>([]);
   const [personalViewTimeframe, setPersonalViewTimeframe] = useState<'monthly' | 'yearly'>('monthly');
+
+  const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null);
+  const [editAmount, setEditAmount] = useState('');
+  const [editCategory, setEditCategory] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editMethod, setEditMethod] = useState('');
+  const [editDate, setEditDate] = useState('');
+  const [editTime, setEditTime] = useState('');
 
   // Employee Expense State
   const [employees, setEmployees] = useState<LocalEmployeeProfile[]>([]);
@@ -166,6 +174,65 @@ export default function ExpensesPage() {
     await deleteRecord('expenses', id);
     await deleteRecord('petrolExpenses', id);
     
+    setRefreshKey(prev => prev + 1);
+  };
+
+  const openEditModal = (exp: LocalExpense) => {
+    setEditingExpenseId(exp.id);
+    setEditAmount(exp.amount.toString());
+    setEditCategory(exp.category || '');
+    setEditDescription(exp.description || '');
+    setEditMethod(exp.payment_method || 'Cash');
+    setEditDate(exp.date);
+    if (exp.created_at) {
+      const dateObj = new Date(exp.created_at);
+      const hh = String(dateObj.getHours()).padStart(2, '0');
+      const mm = String(dateObj.getMinutes()).padStart(2, '0');
+      setEditTime(`${hh}:${mm}`);
+    } else {
+      setEditTime('12:00');
+    }
+  };
+
+  const saveExpenseEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingExpenseId) return;
+    const amountNum = parseFloat(editAmount);
+    if (isNaN(amountNum)) return;
+
+    const expense = await db.expenses.get(editingExpenseId);
+    if (!expense) return;
+
+    let newCreatedAt = expense.created_at;
+    if (editDate && editTime) {
+      const baseDate = new Date(editDate);
+      const [hh, mm] = editTime.split(':');
+      baseDate.setHours(Number(hh) || 0, Number(mm) || 0, 0, 0);
+      newCreatedAt = baseDate.toISOString();
+    }
+
+    await db.expenses.update(editingExpenseId, {
+      amount: amountNum,
+      category: editCategory,
+      description: editDescription,
+      payment_method: editMethod,
+      date: editDate || expense.date,
+      created_at: newCreatedAt,
+      updated_at: new Date().toISOString(),
+      _syncStatus: 'pending'
+    });
+
+    // Also update petrol expense if linked
+    const pExp = await db.petrolExpenses.get(editingExpenseId);
+    if (pExp) {
+      await db.petrolExpenses.update(editingExpenseId, {
+        amount: amountNum,
+        date: editDate || expense.date,
+        _syncStatus: 'pending'
+      });
+    }
+
+    setEditingExpenseId(null);
     setRefreshKey(prev => prev + 1);
   };
 
@@ -473,6 +540,9 @@ export default function ExpensesPage() {
                       </div>
                       <div className={styles.logRight}>
                         <span className={styles.logAmount}>₹{exp.amount}</span>
+                        <button onClick={() => openEditModal(exp)} className={styles.deleteBtn}>
+                          <Edit2 size={16} />
+                        </button>
                         <button onClick={() => deleteExpense(exp.id)} className={styles.deleteBtn}>
                           <Trash2 size={16} />
                         </button>
@@ -878,6 +948,62 @@ export default function ExpensesPage() {
             })()}
           </div>
         </div>
+      )}
+
+      {editingExpenseId && (
+        <>
+          <div className="modal-backdrop" onClick={() => setEditingExpenseId(null)} />
+          <div className="bottom-sheet" style={{ display: 'block', zIndex: 1000 }}>
+            <div className="bottom-sheet-handle" />
+            <div className="bottom-sheet-content p-4">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>Edit Expense</h3>
+                <button onClick={() => setEditingExpenseId(null)} className="btn-icon btn-ghost">
+                  <X size={20} />
+                </button>
+              </div>
+              <form onSubmit={saveExpenseEdit} className="form flex flex-col gap-4">
+                <div className="input-group">
+                  <label className="input-label">Amount (₹)</label>
+                  <input type="number" step="0.01" value={editAmount} onChange={e => setEditAmount(e.target.value)} className="input" required />
+                </div>
+                <div className="input-group">
+                  <label className="input-label">Category</label>
+                  <input type="text" value={editCategory} onChange={e => setEditCategory(e.target.value)} className="input" required />
+                </div>
+                <div className="input-group">
+                  <label className="input-label">Description</label>
+                  <input type="text" value={editDescription} onChange={e => setEditDescription(e.target.value)} className="input" />
+                </div>
+                <div className="input-group">
+                  <label className="input-label">Bank Details / Payment Method</label>
+                  <select value={editMethod} onChange={e => setEditMethod(e.target.value)} className="input">
+                    <option value="">Select Method</option>
+                    {paymentMethods.map(m => (
+                      <option key={m} value={m}>{m}</option>
+                    ))}
+                    {!paymentMethods.includes(editMethod) && editMethod && (
+                      <option value={editMethod}>{editMethod}</option>
+                    )}
+                  </select>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="input-group">
+                    <label className="input-label">Date</label>
+                    <input type="date" value={editDate} onChange={e => setEditDate(e.target.value)} className="input" required />
+                  </div>
+                  <div className="input-group">
+                    <label className="input-label">Time</label>
+                    <input type="time" value={editTime} onChange={e => setEditTime(e.target.value)} className="input" required />
+                  </div>
+                </div>
+                <button type="submit" className="btn btn-primary btn-full mt-2">
+                  Save Changes
+                </button>
+              </form>
+            </div>
+          </div>
+        </>
       )}
     </div>
   );
