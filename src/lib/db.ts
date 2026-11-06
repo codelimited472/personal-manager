@@ -65,27 +65,6 @@ export interface LocalExpense extends SyncFields {
   updated_at: string;
 }
 
-export interface LocalEmployeeProfile extends SyncFields {
-  id: string;
-  user_id: string;
-  name: string;
-  email?: string;
-  phone?: string;
-  created_at: string;
-}
-
-export interface LocalEmployeeExpense extends SyncFields {
-  id: string;
-  user_id: string;
-  employee_id: string;
-  amount: number;
-  category: string;
-  description?: string;
-  date: string;
-  status: 'pending' | 'approved' | 'reimbursed';
-  created_at: string;
-}
-
 // Petrol & Mileage
 export interface LocalPetrolExpense extends SyncFields {
   id: string;
@@ -494,8 +473,6 @@ class PersonalManagerDB extends Dexie {
   dailyActivities!: EntityTable<LocalDailyActivity, 'id'>;
   waterLogs!: EntityTable<LocalWaterLog, 'id'>;
   expenses!: EntityTable<LocalExpense, 'id'>;
-  employeeProfiles!: EntityTable<LocalEmployeeProfile, 'id'>;
-  employeeExpenses!: EntityTable<LocalEmployeeExpense, 'id'>;
   petrolExpenses!: EntityTable<LocalPetrolExpense, 'id'>;
   vehicles!: EntityTable<LocalVehicle, 'id'>;
   vehicleIssues!: EntityTable<LocalVehicleIssue, 'id'>;
@@ -636,6 +613,11 @@ class PersonalManagerDB extends Dexie {
       habits: null,
       habitLogs: null,
       dailyActivities: 'id, user_id, date, _syncStatus',
+    });
+
+    this.version(14).stores({
+      employeeProfiles: null,
+      employeeExpenses: null,
     });
   }
 }

@@ -5,7 +5,7 @@ export type SyncableTable =
   | 'tasks' | 'dailyActivities' | 'waterLogs' | 'expenses' 
   | 'captures' | 'notifications' | 'settings'
   | 'vehicles' | 'vehicleIssues' | 'petrolExpenses' 
-  | 'employeeProfiles' | 'employeeExpenses' | 'trips' | 'tripExpenses' | 'tripPackingItems'
+  | 'trips' | 'tripExpenses' | 'tripPackingItems'
   | 'places' | 'restaurants' | 'noteFolders' | 'inventoryItems' | 'expiryItems'
   | 'wardrobeItems' | 'outfits' | 'documents' | 'businessWorkspaces'
   | 'businessNotes' | 'businessIdeas' | 'businessDocuments' | 'businessContacts'
@@ -25,8 +25,6 @@ export const tableMap: Record<SyncableTable, string> = {
   vehicles: 'vehicles',
   vehicleIssues: 'vehicle_issues',
   petrolExpenses: 'petrol_expenses',
-  employeeProfiles: 'employee_profiles',
-  employeeExpenses: 'employee_expenses',
   trips: 'trips',
   tripExpenses: 'trip_expenses',
   tripPackingItems: 'trip_packing_items',
@@ -239,14 +237,14 @@ export async function syncAll(userId: string): Promise<void> {
   // Sync core/parent tables first to satisfy foreign key constraints
   const tier1: SyncableTable[] = [
     'settings', 'tasks', 'dailyActivities', 'waterLogs', 'expenses', 'captures',
-    'notifications', 'vehicles', 'employeeProfiles', 'trips',
+    'notifications', 'vehicles', 'trips',
     'places', 'restaurants', 'noteFolders', 'inventoryItems', 'expiryItems',
     'wardrobeItems', 'documents', 'businessWorkspaces', 'ideas', 'haircuts', 'appLists', 'events'
   ];
 
   // Sync child tables
   const tier2: SyncableTable[] = [
-    'vehicleIssues', 'petrolExpenses', 'employeeExpenses',
+    'vehicleIssues', 'petrolExpenses',
     'tripExpenses', 'tripPackingItems', 'outfits',
     'businessNotes', 'businessIdeas', 'businessDocuments', 'businessContacts', 
     'businessChecklists', 'businessFuturePlans', 'businessGoals',

@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Wallet, Users, Car, Plus, Trash2, CheckCircle2, TrendingUp, Landmark, Edit2, X } from 'lucide-react';
-import { getDB, type LocalExpense, type LocalEmployeeProfile, type LocalEmployeeExpense, type LocalPetrolExpense, type LocalVehicle } from '@/lib/db';
+import { Wallet, Car, Trash2, TrendingUp, Edit2, X, Search, ChevronDown } from 'lucide-react';
+import { getDB, type LocalExpense, type LocalPetrolExpense, type LocalVehicle } from '@/lib/db';
 import { getToday } from '@/lib/utils';
 import QuickExpenseLog from '@/components/QuickExpenseLog';
 import { deleteRecord } from '@/lib/sync';
@@ -11,17 +11,20 @@ import styles from './expenses.module.css';
 import pageStyles from '@/app/page.module.css';
 
 export default function ExpensesPage() {
-  const [activeTab, setActiveTab] = useState<'personal' | 'employee' | 'petrol' | 'analytics'>('personal');
+  const [activeTab, setActiveTab] = useState<'personal' | 'petrol' | 'analytics'>('personal');
   const db = getDB();
 
   const [analyticsTimeframe, setAnalyticsTimeframe] = useState<'monthly' | 'yearly'>('monthly');
   const [analyticsSelectedMonth, setAnalyticsSelectedMonth] = useState(getToday().substring(0, 7));
   const [analyticsSelectedYear, setAnalyticsSelectedYear] = useState(getToday().substring(0, 4));
   const [selectedAnalyticsCategories, setSelectedAnalyticsCategories] = useState<string[]>([]);
+  const [expandedSources, setExpandedSources] = useState<string[]>([]);
+  const [expandedCategories, setExpandedCategories] = useState<string[]>([]);
 
   // Personal Expense State
   const [expenses, setExpenses] = useState<LocalExpense[]>([]);
   const [personalViewTimeframe, setPersonalViewTimeframe] = useState<'monthly' | 'yearly'>('monthly');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null);
   const [editAmount, setEditAmount] = useState('');
@@ -30,15 +33,6 @@ export default function ExpensesPage() {
   const [editMethod, setEditMethod] = useState('');
   const [editDate, setEditDate] = useState('');
   const [editTime, setEditTime] = useState('');
-
-  // Employee Expense State
-  const [employees, setEmployees] = useState<LocalEmployeeProfile[]>([]);
-  const [empExpenses, setEmpExpenses] = useState<(LocalEmployeeExpense & { employeeName?: string })[]>([]);
-  const [empName, setEmpName] = useState('');
-  const [selectedEmpId, setSelectedEmpId] = useState('');
-  const [empAmount, setEmpAmount] = useState('');
-  const [empCategory, setEmpCategory] = useState('Office');
-  const [empDesc, setEmpDesc] = useState('');
 
   // Petrol State
   const [vehicles, setVehicles] = useState<LocalVehicle[]>([]);
@@ -87,20 +81,7 @@ export default function ExpensesPage() {
         setPetrolPaymentMethod('Cash');
       }
 
-      // 2. Employee
-      const emps = await db.employeeProfiles.toArray();
-      setEmployees(emps);
-      if (emps.length > 0 && !selectedEmpId) {
-        setSelectedEmpId(emps[0].id);
-      }
-      const claims = await db.employeeExpenses.toArray();
-      const claimsWithNames = claims.map(c => ({
-        ...c,
-        employeeName: emps.find(e => e.id === c.employee_id)?.name || 'Unknown',
-      }));
-      setEmpExpenses(claimsWithNames);
-
-      // 3. Petrol / Vehicles
+      // 2. Petrol / Vehicles
       const cars = await db.vehicles.toArray();
       setVehicles(cars);
       if (cars.length > 0 && !selectedVehicleId) {
@@ -236,49 +217,6 @@ export default function ExpensesPage() {
     setRefreshKey(prev => prev + 1);
   };
 
-  // Employee Actions
-  const addEmployee = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!empName) return;
-    const newEmp = {
-      id: crypto.randomUUID(),
-      user_id: 'local-user',
-      name: empName,
-      created_at: new Date().toISOString(),
-      _syncStatus: 'pending' as const,
-    };
-    await db.employeeProfiles.add(newEmp);
-    setEmpName('');
-    setSelectedEmpId(newEmp.id);
-    setRefreshKey(prev => prev + 1);
-  };
-
-  const addEmployeeExpense = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!empAmount || !selectedEmpId) return;
-    await db.employeeExpenses.add({
-      id: crypto.randomUUID(),
-      user_id: 'local-user',
-      employee_id: selectedEmpId,
-      amount: parseFloat(empAmount),
-      category: empCategory,
-      description: empDesc,
-      date: getToday(),
-      status: 'pending',
-      created_at: new Date().toISOString(),
-      _syncStatus: 'pending',
-    });
-    setEmpAmount('');
-    setEmpDesc('');
-    setRefreshKey(prev => prev + 1);
-  };
-
-  const approveClaim = async (id: string, currentStatus: string) => {
-    const nextStatus = currentStatus === 'pending' ? 'approved' : 'reimbursed';
-    await db.employeeExpenses.update(id, { status: nextStatus });
-    setRefreshKey(prev => prev + 1);
-  };
-
   // Petrol Action
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
@@ -402,6 +340,53 @@ export default function ExpensesPage() {
     return acc;
   }, {} as Record<string, number>);
 
+  const filteredExpenses = expenses.filter(exp => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.trim().toLowerCase();
+
+    // 1. Amount match
+    const amountStr = String(exp.amount);
+    if (amountStr.includes(q) || `₹${amountStr}`.toLowerCase().includes(q)) return true;
+
+    // 2. Category match
+    if (exp.category && exp.category.toLowerCase().includes(q)) return true;
+
+    // 3. Description match
+    if (exp.description && exp.description.toLowerCase().includes(q)) return true;
+
+    // 4. Payment method match
+    if (exp.payment_method && exp.payment_method.toLowerCase().includes(q)) return true;
+
+    // 5. Date matching:
+    if (exp.date && exp.date.toLowerCase().includes(q)) return true;
+
+    // "today" or "yesterday"
+    if (q === 'today' && exp.date === getToday()) return true;
+    const yesterdayDate = new Date();
+    yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+    const yStr = `${yesterdayDate.getFullYear()}-${String(yesterdayDate.getMonth() + 1).padStart(2, '0')}-${String(yesterdayDate.getDate()).padStart(2, '0')}`;
+    if (q === 'yesterday' && exp.date === yStr) return true;
+
+    // Formatted dates like "Nov", "November", "Friday", "Nov 6", etc.
+    if (exp.date) {
+      try {
+        const d = new Date(exp.date + 'T00:00:00');
+        const longDate = d.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }).toLowerCase();
+        const shortDate = d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }).toLowerCase();
+        if (longDate.includes(q) || shortDate.includes(q)) return true;
+      } catch {}
+    }
+
+    // Time matching
+    if (exp.created_at) {
+      try {
+        const timeStr = new Date(exp.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }).toLowerCase();
+        if (timeStr.includes(q)) return true;
+      } catch {}
+    }
+
+    return false;
+  });
 
   return (
     <div className="page">
@@ -412,12 +397,6 @@ export default function ExpensesPage() {
           className={activeTab === 'personal' ? styles.tabActive : styles.tab}
         >
           <Wallet size={16} /> Personal
-        </button>
-        <button
-          onClick={() => setActiveTab('employee')}
-          className={activeTab === 'employee' ? styles.tabActive : styles.tab}
-        >
-          <Users size={16} /> Employee Claims
         </button>
         <button
           onClick={() => setActiveTab('petrol')}
@@ -507,28 +486,81 @@ export default function ExpensesPage() {
           <QuickExpenseLog onExpenseAdded={() => setRefreshKey(prev => prev + 1)} />
 
           <div className={styles.listSection}>
-            <h3 className={styles.sectionHeader}>Expense Log</h3>
+            <div className={styles.expenseSearchSection}>
+              <div className={styles.expenseHeaderRow}>
+                <h3 className={styles.sectionHeader} style={{ marginBottom: 0 }}>Expense Log</h3>
+                <span className={styles.expenseCountBadge}>
+                  {expenses.length} transaction{expenses.length !== 1 ? 's' : ''}
+                </span>
+              </div>
+              <div className={styles.searchBox}>
+                <div className={styles.searchIconWrapper}>
+                  <Search size={18} />
+                </div>
+                <input
+                  type="text"
+                  placeholder="Search expenses..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className={styles.searchInput}
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    className={styles.searchClearButton}
+                    onClick={() => setSearchQuery('')}
+                    title="Clear search"
+                  >
+                    <X size={14} />
+                  </button>
+                )}
+              </div>
+              {searchQuery.trim() && (
+                <div className={styles.searchResultsSummary}>
+                  <div className={styles.searchResultsText}>
+                    <span>
+                      Found <strong>{filteredExpenses.length}</strong> result{filteredExpenses.length !== 1 ? 's' : ''} for &ldquo;{searchQuery}&rdquo;
+                    </span>
+                    {filteredExpenses.length > 0 && (
+                      <span className={styles.searchResultsTotal}>
+                        ₹{Math.round(filteredExpenses.reduce((s, e) => s + e.amount, 0)).toLocaleString()}
+                      </span>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    className={styles.searchResultsClear}
+                    onClick={() => setSearchQuery('')}
+                  >
+                    Clear
+                  </button>
+                </div>
+              )}
+            </div>
+
             {isLoading ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
                 <Skeleton height="60px" borderRadius="var(--radius-md)" />
                 <Skeleton height="60px" borderRadius="var(--radius-md)" />
                 <Skeleton height="60px" borderRadius="var(--radius-md)" />
               </div>
-            ) : expenses.length === 0 ? (
-              <p className={styles.emptyState}>No expenses logged yet.</p>
+            ) : filteredExpenses.length === 0 ? (
+              <p className={styles.emptyState}>
+                {searchQuery.trim() ? `No transactions found matching "${searchQuery}".` : 'No expenses logged yet.'}
+              </p>
             ) : (
               Object.entries(
-                expenses.reduce((acc, exp) => {
+                filteredExpenses.reduce((acc, exp) => {
                   if (!acc[exp.date]) acc[exp.date] = [];
                   acc[exp.date].push(exp);
                   return acc;
-                }, {} as Record<string, typeof expenses>)
+                }, {} as Record<string, typeof filteredExpenses>)
               )
               .sort(([dateA], [dateB]) => new Date(dateB).getTime() - new Date(dateA).getTime())
               .map(([date, dateExpenses]) => (
                 <div key={date}>
                   <h4 style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '1.25rem 0 0.5rem 0', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                    {date === getToday() ? 'Today' : new Date(date).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}
+                    {date === getToday() ? 'Today' : new Date(date + 'T00:00:00').toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}
                   </h4>
                   {dateExpenses.map(exp => (
                     <div key={exp.id} className={styles.logItem}>
@@ -556,115 +588,7 @@ export default function ExpensesPage() {
         </div>
       )}
 
-      {/* 2. Employee tab */}
-      {activeTab === 'employee' && (
-        <div>
-          {/* Add Employee Form */}
-          <form onSubmit={addEmployee} className={styles.formCard}>
-            <h4 className={styles.formTitle}>Register Employee Profile</h4>
-            <div className={styles.formGroupRow}>
-              <input
-                type="text"
-                placeholder="Employee Full Name"
-                value={empName}
-                onChange={(e) => setEmpName(e.target.value)}
-                className={styles.input}
-                required
-              />
-              <button type="submit" className={styles.smallSubmitBtn}>Add</button>
-            </div>
-          </form>
-
-          {/* Add Claim Form */}
-          {employees.length > 0 && (
-            <form onSubmit={addEmployeeExpense} className={styles.formCard}>
-              <h4 className={styles.formTitle}>Submit Employee Claim</h4>
-              <div className={styles.formGroup}>
-                <select
-                  value={selectedEmpId}
-                  onChange={(e) => setSelectedEmpId(e.target.value)}
-                  className={styles.input}
-                >
-                  {employees.map(emp => (
-                    <option key={emp.id} value={emp.id}>{emp.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div className={styles.formGroup}>
-                <input
-                  type="number"
-                  placeholder="Amount (₹)"
-                  value={empAmount}
-                  onChange={(e) => setEmpAmount(e.target.value)}
-                  className={styles.input}
-                  required
-                />
-              </div>
-              <div className={styles.formGroup}>
-                <input
-                  type="text"
-                  placeholder="Category (e.g., Office Supplies, Client Dinner)"
-                  value={empCategory}
-                  onChange={(e) => setEmpCategory(e.target.value)}
-                  className={styles.input}
-                  required
-                />
-              </div>
-              <div className={styles.formGroup}>
-                <input
-                  type="text"
-                  placeholder="Purpose details"
-                  value={empDesc}
-                  onChange={(e) => setEmpDesc(e.target.value)}
-                  className={styles.input}
-                />
-              </div>
-              <button type="submit" className={styles.submitBtn}>
-                Submit Claim
-              </button>
-            </form>
-          )}
-
-          {/* Claim Logs */}
-          <div className={styles.listSection}>
-            <h3 className={styles.sectionHeader}>Claims & Approvals</h3>
-            {isLoading ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-                <Skeleton height="60px" borderRadius="var(--radius-md)" />
-                <Skeleton height="60px" borderRadius="var(--radius-md)" />
-              </div>
-            ) : empExpenses.length === 0 ? (
-              <p className={styles.emptyState}>No employee claims logged.</p>
-            ) : (
-              empExpenses.map(claim => (
-                <div key={claim.id} className={styles.logItem}>
-                  <div>
-                    <strong className={styles.logTitle}>{claim.employeeName}</strong>
-                    <span className={styles.logSub}>
-                      {claim.category} • {claim.date} • {claim.description}
-                    </span>
-                  </div>
-                  <div className={styles.logRight}>
-                    <span className={styles.logAmount}>₹{claim.amount}</span>
-                    <button
-                      onClick={() => approveClaim(claim.id, claim.status)}
-                      className={styles.statusBtn}
-                      style={{
-                        background: claim.status === 'reimbursed' ? 'var(--accent-success-muted)' : 'var(--bg-tertiary)',
-                        color: claim.status === 'reimbursed' ? 'var(--accent-success)' : 'var(--text-secondary)'
-                      }}
-                    >
-                      {claim.status}
-                    </button>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* 3. Petrol tab */}
+      {/* 2. Petrol tab */}
       {activeTab === 'petrol' && (
         <div>
           {vehicles.length === 0 ? (
@@ -856,28 +780,102 @@ export default function ExpensesPage() {
                 return <p className={styles.emptyState}>No payment sources found for this period.</p>;
               }
 
+              const toggleSource = (source: string) => {
+                setExpandedSources(prev => 
+                  prev.includes(source) ? prev.filter(s => s !== source) : [...prev, source]
+                );
+              };
+
               return (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                  {sortedSources.map(([source, amt]) => (
-                    <div key={source} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.95rem', color: 'var(--text-primary)', fontWeight: 'var(--weight-medium)' }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: 'var(--accent-info)' }}></span>
-                          {source}
-                        </span>
-                        <span>₹{amt.toLocaleString()} <span style={{ color: 'var(--text-tertiary)', fontSize: '0.8rem', marginLeft: '4px' }}>({(amt / totalSourceAmt * 100).toFixed(1)}%)</span></span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  {sortedSources.map(([source, amt]) => {
+                    const isExpanded = expandedSources.includes(source);
+                    const sourceExpenses = currentExps.filter(e => (e.payment_method || 'Unknown') === source);
+                    sourceExpenses.sort((a, b) => new Date(b.created_at || b.date).getTime() - new Date(a.created_at || a.date).getTime());
+
+                    return (
+                      <div 
+                        key={source} 
+                        className={`${styles.analyticsItem} ${isExpanded ? styles.analyticsItemSelected : ''}`}
+                        style={{ cursor: 'default' }}
+                      >
+                        <div className={styles.analyticsItemHeader}>
+                          <span className={styles.analyticsItemName}>
+                            <span className={styles.analyticsItemDot} style={{ background: 'var(--accent-info)' }}></span>
+                            {source}
+                          </span>
+                          <span className={styles.analyticsItemValues}>
+                            <span>₹{amt.toLocaleString()} <span style={{ color: 'var(--text-tertiary)', fontSize: '0.8rem', marginLeft: '4px' }}>({(amt / totalSourceAmt * 100).toFixed(1)}%)</span></span>
+                            <button
+                              type="button"
+                              className={`${styles.analyticsChevronBtn} ${isExpanded ? styles.analyticsChevronBtnActive : ''}`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleSource(source);
+                              }}
+                              title={isExpanded ? 'Hide transactions' : 'Show transactions'}
+                              aria-label={`${isExpanded ? 'Hide' : 'Show'} transactions for ${source}`}
+                            >
+                              <ChevronDown size={16} className={`${styles.analyticsChevron} ${isExpanded ? styles.analyticsChevronOpen : ''}`} />
+                            </button>
+                          </span>
+                        </div>
+                        <div className={styles.analyticsProgressBar}>
+                          <div 
+                            className={styles.analyticsProgressFill}
+                            style={{ 
+                              width: `${(amt / maxSourceAmt) * 100}%`, 
+                              background: 'var(--accent-info)',
+                            }} 
+                          />
+                        </div>
+
+                        {isExpanded && (
+                          <div className={styles.analyticsDrilldownList} onClick={(e) => e.stopPropagation()}>
+                            <div className={styles.analyticsDrilldownHeader}>
+                              <span>{sourceExpenses.length} transaction{sourceExpenses.length !== 1 ? 's' : ''}</span>
+                              <span>Total: ₹{amt.toLocaleString()}</span>
+                            </div>
+                            {sourceExpenses.map(exp => (
+                              <div key={exp.id} className={styles.analyticsDrilldownItem}>
+                                <div className={styles.analyticsDrilldownLeft}>
+                                  <div className={styles.analyticsDrilldownDate}>
+                                    {new Date(exp.date + 'T00:00:00').toLocaleDateString(undefined, { 
+                                      month: 'short', 
+                                      day: 'numeric',
+                                      year: analyticsTimeframe === 'yearly' ? 'numeric' : undefined 
+                                    })}
+                                    {exp.created_at && (
+                                      <span className={styles.analyticsDrilldownTime}>
+                                        {new Date(exp.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className={styles.analyticsDrilldownDesc}>
+                                    <strong>{exp.category}</strong>
+                                    {exp.description ? ` • ${exp.description}` : ''}
+                                  </div>
+                                </div>
+                                <div className={styles.analyticsDrilldownRight}>
+                                  <span className={styles.analyticsDrilldownAmount}>₹{exp.amount.toLocaleString()}</span>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      openEditModal(exp);
+                                    }}
+                                    className={styles.analyticsDrilldownEditBtn}
+                                    title="Edit expense"
+                                  >
+                                    <Edit2 size={14} />
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                      <div style={{ width: '100%', height: '8px', background: 'var(--bg-tertiary)', borderRadius: '4px', overflow: 'hidden' }}>
-                        <div style={{ 
-                          width: `${(amt / maxSourceAmt) * 100}%`, 
-                          height: '100%', 
-                          background: 'var(--accent-info)',
-                          borderRadius: '4px',
-                          transition: 'width 0.5s ease-out'
-                        }} />
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               );
             })()}
@@ -907,40 +905,124 @@ export default function ExpensesPage() {
                 );
               };
 
+              const toggleCategoryExpand = (cat: string) => {
+                setExpandedCategories(prev => 
+                  prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat]
+                );
+              };
+
               const selectedTotal = sorted.filter(([cat]) => selectedAnalyticsCategories.includes(cat)).reduce((sum, [, amt]) => sum + amt, 0);
 
               return (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   {selectedAnalyticsCategories.length > 0 && (
                     <div style={{ padding: '16px', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
                         <span style={{ fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Selected Total:</span>
                         <strong style={{ fontSize: '1.2rem', marginLeft: '8px' }}>₹{Math.round(selectedTotal).toLocaleString()}</strong>
                       </div>
-                      <button onClick={() => setSelectedAnalyticsCategories([])} style={{ fontSize: '0.85rem', color: 'var(--accent-danger)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px', borderRadius: '4px' }}>Clear Selection</button>
+                      <button 
+                        onClick={() => setSelectedAnalyticsCategories([])} 
+                        style={{ fontSize: '0.85rem', color: 'var(--accent-danger)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px', borderRadius: '4px' }}
+                      >
+                        Clear Selection
+                      </button>
                     </div>
                   )}
                   {sorted.map(([cat, amt]) => {
                     const isSelected = selectedAnalyticsCategories.includes(cat);
+                    const isExpanded = expandedCategories.includes(cat);
+                    const catExpenses = currentExps.filter(e => (e.category || 'Other') === cat);
+                    catExpenses.sort((a, b) => new Date(b.created_at || b.date).getTime() - new Date(a.created_at || a.date).getTime());
+
                     return (
-                    <div key={cat} onClick={() => handleCategoryClick(cat)} style={{ display: 'flex', flexDirection: 'column', gap: '8px', cursor: 'pointer', padding: '12px', borderRadius: '8px', background: isSelected ? 'var(--bg-tertiary)' : 'transparent', transition: 'background 0.2s', margin: '-12px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.95rem', color: 'var(--text-primary)', fontWeight: 'var(--weight-medium)' }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: isSelected ? 'var(--accent-info)' : 'var(--accent-primary)' }}></span>
-                          {cat}
-                        </span>
-                        <span>₹{Math.round(amt).toLocaleString()} <span style={{ color: 'var(--text-tertiary)', fontSize: '0.8rem', marginLeft: '4px' }}>({(amt / totalAmt * 100).toFixed(1)}%)</span></span>
+                      <div 
+                        key={cat} 
+                        className={`${styles.analyticsItem} ${isSelected ? styles.analyticsItemSelected : ''}`}
+                        onClick={() => handleCategoryClick(cat)}
+                      >
+                        <div className={styles.analyticsItemHeader}>
+                          <span className={styles.analyticsItemName}>
+                            <span 
+                              className={styles.analyticsItemDot} 
+                              style={{ background: isSelected ? 'var(--accent-info)' : 'var(--accent-primary)' }}
+                            ></span>
+                            {cat}
+                          </span>
+                          <span className={styles.analyticsItemValues}>
+                            <span>₹{Math.round(amt).toLocaleString()} <span style={{ color: 'var(--text-tertiary)', fontSize: '0.8rem', marginLeft: '4px' }}>({(amt / totalAmt * 100).toFixed(1)}%)</span></span>
+                            <button
+                              type="button"
+                              className={`${styles.analyticsChevronBtn} ${isExpanded ? styles.analyticsChevronBtnActive : ''}`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleCategoryExpand(cat);
+                              }}
+                              title={isExpanded ? 'Hide transactions' : 'Show transactions'}
+                              aria-label={`${isExpanded ? 'Hide' : 'Show'} transactions for ${cat}`}
+                            >
+                              <ChevronDown size={16} className={`${styles.analyticsChevron} ${isExpanded ? styles.analyticsChevronOpen : ''}`} />
+                            </button>
+                          </span>
+                        </div>
+                        <div className={styles.analyticsProgressBar}>
+                          <div 
+                            className={styles.analyticsProgressFill}
+                            style={{ 
+                              width: `${(amt / maxAmt) * 100}%`, 
+                              background: isSelected ? 'var(--accent-info)' : 'var(--accent-primary)',
+                            }} 
+                          />
+                        </div>
+
+                        {isExpanded && (
+                          <div className={styles.analyticsDrilldownList} onClick={(e) => e.stopPropagation()}>
+                            <div className={styles.analyticsDrilldownHeader}>
+                              <span>{catExpenses.length} transaction{catExpenses.length !== 1 ? 's' : ''}</span>
+                              <span>Total: ₹{Math.round(amt).toLocaleString()}</span>
+                            </div>
+                            {catExpenses.map(exp => (
+                              <div key={exp.id} className={styles.analyticsDrilldownItem}>
+                                <div className={styles.analyticsDrilldownLeft}>
+                                  <div className={styles.analyticsDrilldownDate}>
+                                    {new Date(exp.date + 'T00:00:00').toLocaleDateString(undefined, { 
+                                      month: 'short', 
+                                      day: 'numeric',
+                                      year: analyticsTimeframe === 'yearly' ? 'numeric' : undefined 
+                                    })}
+                                    {exp.created_at && (
+                                      <span className={styles.analyticsDrilldownTime}>
+                                        {new Date(exp.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true })}
+                                      </span>
+                                    )}
+                                  </div>
+                                  {exp.description && (
+                                    <div className={styles.analyticsDrilldownDesc}>{exp.description}</div>
+                                  )}
+                                  <div className={styles.analyticsDrilldownMeta}>
+                                    {exp.payment_method && (
+                                      <span className={styles.analyticsDrilldownTag}>{exp.payment_method}</span>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className={styles.analyticsDrilldownRight}>
+                                  <span className={styles.analyticsDrilldownAmount}>₹{exp.amount.toLocaleString()}</span>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      openEditModal(exp);
+                                    }}
+                                    className={styles.analyticsDrilldownEditBtn}
+                                    title="Edit expense"
+                                  >
+                                    <Edit2 size={14} />
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                      <div style={{ width: '100%', height: '8px', background: 'var(--bg-secondary)', borderRadius: '4px', overflow: 'hidden' }}>
-                        <div style={{ 
-                          width: `${(amt / maxAmt) * 100}%`, 
-                          height: '100%', 
-                          background: isSelected ? 'var(--accent-info)' : 'var(--accent-primary)',
-                          borderRadius: '4px',
-                          transition: 'width 0.5s ease-out, background 0.2s'
-                        }} />
-                      </div>
-                    </div>
                     );
                   })}
                 </div>

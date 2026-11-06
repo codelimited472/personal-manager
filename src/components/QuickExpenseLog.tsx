@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Wallet, Plus } from 'lucide-react';
+import { Wallet, Plus, ChevronDown } from 'lucide-react';
 import { getDB } from '@/lib/db';
 import { getToday } from '@/lib/utils';
 import styles from '@/app/page.module.css';
@@ -21,6 +21,35 @@ export default function QuickExpenseLog({ onExpenseAdded }: Props) {
   
   const [savedCategories, setSavedCategories] = useState<string[]>(['Food', 'Transport', 'Shopping', 'Bills']);
   const [showCatDropdown, setShowCatDropdown] = useState(false);
+
+  const [showDateDropdown, setShowDateDropdown] = useState(false);
+  const [customDate, setCustomDate] = useState('');
+  const [customTime, setCustomTime] = useState('');
+
+  const getCurrentTime = () => {
+    const now = new Date();
+    return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  };
+
+  const getYesterdayStr = () => {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const toggleDateDropdown = () => {
+    setShowDateDropdown(prev => {
+      const next = !prev;
+      if (next) {
+        if (!customDate) setCustomDate(getToday());
+        if (!customTime) setCustomTime(getCurrentTime());
+      }
+      return next;
+    });
+  };
 
   useEffect(() => {
     async function loadSettings() {
@@ -77,6 +106,17 @@ export default function QuickExpenseLog({ onExpenseAdded }: Props) {
     const todayStr = getToday();
     const trimmedBank = payBank.trim();
 
+    const targetDate = (showDateDropdown && customDate) ? customDate : (customDate || todayStr);
+    let createdAtIso = new Date().toISOString();
+
+    if ((showDateDropdown || customDate) && targetDate) {
+      const [yyyy, mm, dd] = targetDate.split('-').map(Number);
+      const timeStr = customTime || getCurrentTime();
+      const [hh, min] = timeStr.split(':').map(Number);
+      const d = new Date(yyyy, mm - 1, dd, hh || 0, min || 0, 0, 0);
+      createdAtIso = d.toISOString();
+    }
+
     await db.expenses.add({
       id: crypto.randomUUID(),
       user_id: 'local-user',
@@ -84,8 +124,8 @@ export default function QuickExpenseLog({ onExpenseAdded }: Props) {
       category: payCategory || 'General',
       description: payDescription.trim() || undefined,
       payment_method: trimmedBank,
-      date: todayStr,
-      created_at: new Date().toISOString(),
+      date: targetDate,
+      created_at: createdAtIso,
       updated_at: new Date().toISOString(),
       _syncStatus: 'pending',
     });
@@ -114,6 +154,9 @@ export default function QuickExpenseLog({ onExpenseAdded }: Props) {
     setPayAmount('');
     setPayCategory('');
     setPayDescription('');
+    setShowDateDropdown(false);
+    setCustomDate('');
+    setCustomTime('');
     onExpenseAdded();
   };
 
@@ -244,9 +287,70 @@ export default function QuickExpenseLog({ onExpenseAdded }: Props) {
               </button>
             )}
           </div>
-          <button type="submit" className={styles.qpSubmitBtn}>
-            Log Payment
-          </button>
+          <div className={styles.qpSubmitRow}>
+            <button type="submit" className={styles.qpSubmitBtn}>
+              {customDate && customDate !== getToday()
+                ? customDate === getYesterdayStr()
+                  ? 'Log Payment (Yesterday)'
+                  : `Log Payment (${new Date(customDate + 'T00:00:00').toLocaleDateString(undefined, { month: 'short', day: 'numeric' })})`
+                : 'Log Payment'}
+            </button>
+            <button
+              type="button"
+              className={`${styles.qpDropdownToggleBtn} ${showDateDropdown ? styles.qpDropdownToggleBtnActive : ''}`}
+              onClick={toggleDateDropdown}
+              title={showDateDropdown ? 'Hide date & time options' : 'Edit date & time for previous day'}
+              aria-label="Toggle date and time menu"
+            >
+              <ChevronDown size={18} className={`${styles.qpDropdownArrow} ${showDateDropdown ? styles.qpDropdownArrowOpen : ''}`} />
+            </button>
+          </div>
+
+          {showDateDropdown && (
+            <div className={styles.qpDateMenu}>
+              <div className={styles.qpDateHeader}>
+                <span className={styles.qpDateTitle}>Expense Date &amp; Time</span>
+                <div className={styles.qpQuickDates}>
+                  <button
+                    type="button"
+                    className={customDate === getToday() ? styles.qpDatePillActive : styles.qpDatePill}
+                    onClick={() => setCustomDate(getToday())}
+                  >
+                    Today
+                  </button>
+                  <button
+                    type="button"
+                    className={customDate === getYesterdayStr() ? styles.qpDatePillActive : styles.qpDatePill}
+                    onClick={() => setCustomDate(getYesterdayStr())}
+                  >
+                    Yesterday
+                  </button>
+                </div>
+              </div>
+              <div className={styles.qpDateInputsRow}>
+                <div className={styles.qpDateGroup}>
+                  <label className={styles.qpDateLabel}>Date</label>
+                  <input
+                    type="date"
+                    value={customDate}
+                    onChange={(e) => setCustomDate(e.target.value)}
+                    className={styles.qpDateInput}
+                    required={showDateDropdown}
+                  />
+                </div>
+                <div className={styles.qpDateGroup}>
+                  <label className={styles.qpDateLabel}>Time</label>
+                  <input
+                    type="time"
+                    value={customTime}
+                    onChange={(e) => setCustomTime(e.target.value)}
+                    className={styles.qpDateInput}
+                    required={showDateDropdown}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
         </form>
       </div>
   );

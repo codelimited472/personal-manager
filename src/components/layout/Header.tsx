@@ -33,7 +33,6 @@ const pageTitles: Record<string, string> = {
   '/places': 'Places',
   '/food': 'Food & Restaurants',
   '/lists': 'Lists',
-  '/employees': 'Employees',
   '/backpack': 'Packing',
   '/expiry': 'Expiry Tracker',
   '/settings': 'Settings',
