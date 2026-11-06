@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Wallet, Plus, ChevronDown } from 'lucide-react';
+import { Wallet, Plus, ChevronDown, Calendar, Clock } from 'lucide-react';
 import { getDB } from '@/lib/db';
 import { getToday } from '@/lib/utils';
 import styles from '@/app/page.module.css';
@@ -329,7 +329,9 @@ export default function QuickExpenseLog({ onExpenseAdded }: Props) {
               </div>
               <div className={styles.qpDateInputsRow}>
                 <div className={styles.qpDateGroup}>
-                  <label className={styles.qpDateLabel}>Date</label>
+                  <label className={styles.qpDateLabel}>
+                    <Calendar size={13} /> Date
+                  </label>
                   <input
                     type="date"
                     value={customDate}
@@ -339,7 +341,9 @@ export default function QuickExpenseLog({ onExpenseAdded }: Props) {
                   />
                 </div>
                 <div className={styles.qpDateGroup}>
-                  <label className={styles.qpDateLabel}>Time</label>
+                  <label className={styles.qpDateLabel}>
+                    <Clock size={13} /> Time
+                  </label>
                   <input
                     type="time"
                     value={customTime}

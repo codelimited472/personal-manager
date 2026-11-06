@@ -787,7 +787,7 @@ export default function ExpensesPage() {
               };
 
               return (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div className={styles.analyticsList}>
                   {sortedSources.map(([source, amt]) => {
                     const isExpanded = expandedSources.includes(source);
                     const sourceExpenses = currentExps.filter(e => (e.payment_method || 'Unknown') === source);
@@ -914,7 +914,7 @@ export default function ExpensesPage() {
               const selectedTotal = sorted.filter(([cat]) => selectedAnalyticsCategories.includes(cat)).reduce((sum, [, amt]) => sum + amt, 0);
 
               return (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div className={styles.analyticsList}>
                   {selectedAnalyticsCategories.length > 0 && (
                     <div style={{ padding: '16px', background: 'var(--bg-tertiary)', borderRadius: 'var(--radius-md)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div>
