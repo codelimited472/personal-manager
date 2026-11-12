@@ -1,4 +1,5 @@
 import { TrendingUp, Target, Crown, X } from 'lucide-react';
+import { useAuth } from '@/features/auth/hooks/useAuth';
 import styles from './BillionaireTracker.module.css';
 
 interface Props {
@@ -6,6 +7,12 @@ interface Props {
 }
 
 export default function BillionaireTracker({ onClose }: Props) {
+  const { user } = useAuth();
+
+  if (user?.email?.toLowerCase() !== 'swastikn7@gmail.com') {
+    return null;
+  }
+
   const currentNetWorth = 40000000; // 4 Crores
   const target = 94360000000; // 94.36 Billion INR (1B USD * 94.36)
   const percent = (currentNetWorth / target) * 100;

@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { getDB, type LocalTask, type LocalWaterLog, type LocalExpense, type LocalNotification } from '@/lib/db';
 import { getToday, isSameDayLocal } from '@/lib/utils';
+import { useAuth } from '@/features/auth/hooks/useAuth';
 import QuickExpenseLog from '@/components/QuickExpenseLog';
 import BillionaireTracker from '@/components/BillionaireTracker';
 import EventsWidget from '@/components/EventsWidget';
@@ -15,13 +16,15 @@ import styles from './page.module.css';
 
 export default function Home() {
   const router = useRouter();
+  const { user } = useAuth();
+  const isAuthorizedForBillionaire = user?.email?.toLowerCase() === 'swastikn7@gmail.com';
   const [tasks, setTasks] = useState<LocalTask[]>([]);
   const [pendingTasksCount, setPendingTasksCount] = useState(0);
   const [waterAmount, setWaterAmount] = useState(0);
   const [todaySpend, setTodaySpend] = useState<number>(0);
   const [ideas, setIdeas] = useState<unknown[]>([]);
   const [notifications, setNotifications] = useState<LocalNotification[]>([]);
-  const [showBillionaireTracker, setShowBillionaireTracker] = useState(true);
+  const [showBillionaireTracker, setShowBillionaireTracker] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -80,15 +83,19 @@ export default function Home() {
         setNotifications(alerts.slice(0, 3));
 
         // 7. Fetch settings
-        const bTrackerSetting = await db.settings.get('show_billionaire_tracker');
-        if (bTrackerSetting) {
-          if (bTrackerSetting.value === 'false') {
-            setShowBillionaireTracker(false); // Keep legacy handling if needed
-          } else if (bTrackerSetting.value === todayStr) {
-            setShowBillionaireTracker(false);
+        if (isAuthorizedForBillionaire) {
+          const bTrackerSetting = await db.settings.get('show_billionaire_tracker');
+          if (bTrackerSetting) {
+            if (bTrackerSetting.value === 'false' || bTrackerSetting.value === todayStr) {
+              setShowBillionaireTracker(false);
+            } else {
+              setShowBillionaireTracker(true);
+            }
           } else {
             setShowBillionaireTracker(true);
           }
+        } else {
+          setShowBillionaireTracker(false);
         }
         
         const calendarSetting = await db.settings.get('show_home_calendar');
@@ -105,7 +112,7 @@ export default function Home() {
       }
     }
     loadDashboardData();
-  }, [refreshKey]);
+  }, [refreshKey, user?.email]);
 
   // Check for day rollover (midnight) to refresh data and re-show the billionaire tracker
   useEffect(() => {
@@ -166,7 +173,7 @@ export default function Home() {
     const todayStr = new Date().toISOString().split('T')[0];
     await db.settings.put({
       key: 'show_billionaire_tracker',
-      user_id: 'local-user', // Should match how settings page saves it
+      user_id: user?.id || 'local-user', // Should match how settings page saves it
       value: todayStr,
       _syncStatus: 'pending'
     });
@@ -174,7 +181,7 @@ export default function Home() {
 
   return (
     <div className="page">
-      {showBillionaireTracker && <BillionaireTracker onClose={closeBillionaireTracker} />}
+      {isAuthorizedForBillionaire && showBillionaireTracker && <BillionaireTracker onClose={closeBillionaireTracker} />}
       <QuickExpenseLog onExpenseAdded={() => setRefreshKey(prev => prev + 1)} />
 
       {/* Alerts & Reminders */}
